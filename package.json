@@ -1,0 +1,13 @@
+{
+  "name": "radgruppe-alarm",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "gen:vapid": "web-push generate-vapid-keys"
+  },
+  "dependencies": {
+    "@vercel/kv": "latest",
+    "web-push": "latest"
+  }
+}

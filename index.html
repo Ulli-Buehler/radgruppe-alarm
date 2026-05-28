@@ -73,6 +73,53 @@
   .member-list-id{font-size:12px;color:var(--muted)}
   .setup-num{font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--green);line-height:1}
   a{color:var(--green)}
+
+  #alarm-popup-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    z-index:9999;
+    background:rgba(0,0,0,.72);
+    align-items:center;
+    justify-content:center;
+    padding:22px;
+  }
+  #alarm-popup-overlay.show{display:flex}
+  #alarm-popup{
+    width:100%;
+    max-width:420px;
+    background:#1b2028;
+    border:3px solid var(--red);
+    border-radius:14px;
+    box-shadow:0 0 35px rgba(255,77,77,.35);
+    padding:22px;
+    text-align:center;
+  }
+  #alarm-popup-title{
+    font-family:'Bebas Neue',sans-serif;
+    font-size:34px;
+    letter-spacing:2px;
+    color:#fff;
+    background:var(--red);
+    margin:-22px -22px 18px -22px;
+    padding:16px;
+    border-radius:10px 10px 0 0;
+  }
+  #alarm-popup-text{
+    font-size:19px;
+    line-height:1.45;
+    color:var(--text);
+    margin-bottom:20px;
+    font-weight:700;
+  }
+  #alarm-popup button{
+    background:var(--green);
+    color:#071007;
+    font-size:22px;
+    padding:12px 34px;
+    border-radius:8px;
+  }
+
 </style>
 </head>
 <body>
@@ -98,6 +145,14 @@
     <div class="config-row"><label>Alarm ab</label><input id="threshold" type="number" value="200" min="1" max="2000" style="max-width:100px"><span style="font-size:13px;color:var(--muted)">Meter</span><button id="btn-start" onclick="startTracking()">START</button><button id="btn-stop" onclick="stopTracking()">STOP</button></div>
   </div>
   <div id="alarm-banner">⚠️ ALARM ⚠️</div>
+  <div id="alarm-popup-overlay">
+    <div id="alarm-popup">
+      <div id="alarm-popup-title">⚠️ WARNUNG</div>
+      <div id="alarm-popup-text">Alarm</div>
+      <button onclick="closeAlarmPopup()">OK</button>
+    </div>
+  </div>
+
   <div id="members"><div id="empty-state">Server konfigurieren und START drücken</div></div>
   <footer><span id="last-update">–</span><span id="update-count">0 Updates</span></footer>
 </div>
@@ -108,15 +163,15 @@
 let interval=null,updateCount=0,devices=[];
 const SIGNAL_TIMEOUT_SECONDS=180; // Live-Status über serverTime/deviceTime/fixTime
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function formatAge(s){s=Math.max(0,Math.round(s));if(s<60)return 'vor '+s+' s';if(s<3600)return 'vor '+Math.round(s/60)+' min';if(s<86400)return 'vor '+Math.round(s/3600)+' h';return 'vor '+Math.round(s/86400)+' d'}
+function showAlarmPopup(messages){const key=messages.join('|');lastPopupKey=key;if(!key||dismissedPopupKey===key)return;const overlay=document.getElementById('alarm-popup-overlay');const text=document.getElementById('alarm-popup-text');if(!overlay||!text)return;text.textContent=messages.slice(0,4).join(' · ');overlay.classList.add('show');}function closeAlarmPopup(){dismissedPopupKey=lastPopupKey;const overlay=document.getElementById('alarm-popup-overlay');if(overlay)overlay.classList.remove('show');}function formatAge(s){s=Math.max(0,Math.round(s));if(s<60)return 'vor '+s+' s';if(s<3600)return 'vor '+Math.round(s/60)+' min';if(s<86400)return 'vor '+Math.round(s/3600)+' h';return 'vor '+Math.round(s/86400)+' d'}
 function showTab(name){const names=['alarm','members','invite','setup'];document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',names[i]===name));document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));document.getElementById('tab-'+name).classList.add('active');if(name==='invite')renderInvites();if(name==='members')renderMemberList()}
 function getConfig(){return{url:document.getElementById('server-url').value.trim().replace(/\/$/,''),email:document.getElementById('email').value.trim(),password:document.getElementById('password').value,threshold:parseInt(document.getElementById('threshold').value)||200,leader:document.getElementById('leader-select').value}}
 async function apiCall(path,method='GET',body=null){const cfg=getConfig();const opts={method,headers:{'Authorization':'Basic '+btoa(cfg.email+':'+cfg.password),'Accept':'application/json','Content-Type':'application/json'}};if(body)opts.body=JSON.stringify(body);const res=await fetch(cfg.url+path,opts);if(!res.ok)throw new Error('HTTP '+res.status);return method==='DELETE'?true:res.json()}
 async function loadDevices(){devices=await apiCall('/api/devices');devices.sort((a,b)=>String(a.name).localeCompare(String(b.name),'de'));const sel=document.getElementById('leader-select');const prev=sel.value;sel.innerHTML='<option value="">– Leiter wählen –</option>';devices.forEach(d=>{const opt=document.createElement('option');opt.value=d.id;opt.textContent=d.name;if(d.name==='Ulli'||String(d.id)===prev)opt.selected=true;sel.appendChild(opt)})}
-async function fetchPositions(){const cfg=getConfig();try{const positions=await apiCall('/api/positions');const posMap={};positions.forEach(p=>posMap[p.deviceId]=p);updateCount++;document.getElementById('last-update').textContent='Update: '+new Date().toLocaleTimeString('de-DE');document.getElementById('update-count').textContent=updateCount+' Updates';document.getElementById('status-dot').className='online';document.getElementById('status-text').textContent='Live';const leaderPos=posMap[parseInt(cfg.leader)];const container=document.getElementById('members');container.innerHTML='';let anyAlert=false;let messages=[];if(!cfg.leader){anyAlert=true;messages.push('Kein Leiter gewählt')}else if(!leaderPos){anyAlert=true;messages.push('Leiter hat kein Signal')}else{const leaderLiveTime=leaderPos.serverTime||leaderPos.deviceTime||leaderPos.fixTime;const leaderAge=Math.round((Date.now()-new Date(leaderLiveTime))/1000);if(leaderAge>SIGNAL_TIMEOUT_SECONDS){anyAlert=true;messages.push('Leiter nicht live')}}devices.forEach(device=>{if(String(device.id)===cfg.leader)return;const pos=posMap[device.id];let distText='–',distClass='offline',cardClass='offline',infoText='Kein Signal';if(pos&&leaderPos){const dist=Math.round(haversine(leaderPos.latitude,leaderPos.longitude,pos.latitude,pos.longitude));const liveTime=pos.serverTime||pos.deviceTime||pos.fixTime;const age=Math.round((Date.now()-new Date(liveTime))/1000);distText=dist+' m';if(age>SIGNAL_TIMEOUT_SECONDS){distClass='alert';cardClass='alert';infoText='Signal weg: '+formatAge(age);anyAlert=true;messages.push(device.name+' nicht live')}else if(dist>cfg.threshold){distClass='alert';cardClass='alert';infoText='zu weit weg · '+formatAge(age);anyAlert=true;messages.push(device.name+' zu weit weg')}else{distClass='ok';cardClass='ok';infoText='Live · '+formatAge(age)}}else if(!leaderPos){infoText='Leiter hat kein Signal';distText='?'}const card=document.createElement('div');card.className='member-card '+cardClass;card.innerHTML='<div><div class="member-name">'+esc(device.name)+'</div><div class="member-info">'+esc(infoText)+'</div></div><div class="member-dist '+distClass+'">'+esc(distText)+'</div>';container.appendChild(card)});const banner=document.getElementById('alarm-banner');if(anyAlert){banner.textContent='⚠️ '+messages.slice(0,3).join(' · ')+' ⚠️';banner.style.display='block'}else{banner.style.display='none'}}catch(e){document.getElementById('status-dot').className='error';document.getElementById('status-text').textContent='Fehler'}}
+async function fetchPositions(){const cfg=getConfig();try{const positions=await apiCall('/api/positions');const posMap={};positions.forEach(p=>posMap[p.deviceId]=p);updateCount++;document.getElementById('last-update').textContent='Update: '+new Date().toLocaleTimeString('de-DE');document.getElementById('update-count').textContent=updateCount+' Updates';document.getElementById('status-dot').className='online';document.getElementById('status-text').textContent='Live';const leaderPos=posMap[parseInt(cfg.leader)];const container=document.getElementById('members');container.innerHTML='';let anyAlert=false;let messages=[];if(!cfg.leader){anyAlert=true;messages.push('Kein Leiter gewählt')}else if(!leaderPos){anyAlert=true;messages.push('Leiter hat kein Signal')}else{const leaderLiveTime=leaderPos.serverTime||leaderPos.deviceTime||leaderPos.fixTime;const leaderAge=Math.round((Date.now()-new Date(leaderLiveTime))/1000);if(leaderAge>SIGNAL_TIMEOUT_SECONDS){anyAlert=true;messages.push('Leiter nicht live')}}devices.forEach(device=>{if(String(device.id)===cfg.leader)return;const pos=posMap[device.id];let distText='–',distClass='offline',cardClass='offline',infoText='Kein Signal';if(pos&&leaderPos){const dist=Math.round(haversine(leaderPos.latitude,leaderPos.longitude,pos.latitude,pos.longitude));const liveTime=pos.serverTime||pos.deviceTime||pos.fixTime;const age=Math.round((Date.now()-new Date(liveTime))/1000);distText=dist+' m';if(age>SIGNAL_TIMEOUT_SECONDS){distClass='alert';cardClass='alert';infoText='Signal weg: '+formatAge(age);anyAlert=true;messages.push(device.name+' nicht live')}else if(dist>cfg.threshold){distClass='alert';cardClass='alert';infoText='zu weit weg · '+formatAge(age);anyAlert=true;messages.push(device.name+' zu weit weg')}else{distClass='ok';cardClass='ok';infoText='Live · '+formatAge(age)}}else if(!leaderPos){infoText='Leiter hat kein Signal';distText='?'}const card=document.createElement('div');card.className='member-card '+cardClass;card.innerHTML='<div><div class="member-name">'+esc(device.name)+'</div><div class="member-info">'+esc(infoText)+'</div></div><div class="member-dist '+distClass+'">'+esc(distText)+'</div>';container.appendChild(card)});const banner=document.getElementById('alarm-banner');if(anyAlert){banner.textContent='⚠️ '+messages.slice(0,3).join(' · ')+' ⚠️';banner.style.display='block';showAlarmPopup(messages)}else{banner.style.display='none';dismissedPopupKey='';lastPopupKey='';const overlay=document.getElementById('alarm-popup-overlay');if(overlay)overlay.classList.remove('show')}}catch(e){document.getElementById('status-dot').className='error';document.getElementById('status-text').textContent='Fehler'}}
 function haversine(lat1,lon1,lat2,lon2){const R=6371000,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))}
 async function startTracking(){const cfg=getConfig();if(!cfg.url||!cfg.email||!cfg.password){alert('Bitte Server, Email und Passwort eingeben!');return}document.getElementById('btn-start').style.display='none';document.getElementById('btn-stop').style.display='inline-block';document.getElementById('members').innerHTML='';try{await loadDevices()}catch(e){alert('Verbindung fehlgeschlagen!\n'+e.message);stopTracking();return}await fetchPositions();interval=setInterval(fetchPositions,10000);saveConfig()}
-function stopTracking(){clearInterval(interval);interval=null;document.getElementById('alarm-banner').style.display='none';document.getElementById('btn-start').style.display='inline-block';document.getElementById('btn-stop').style.display='none';document.getElementById('status-dot').className='';document.getElementById('status-text').textContent='Gestoppt';document.getElementById('members').innerHTML='<div id="empty-state">Server konfigurieren und START drücken</div>'}
+function stopTracking(){clearInterval(interval);interval=null;document.getElementById('alarm-banner').style.display='none';dismissedPopupKey='';lastPopupKey='';const overlay=document.getElementById('alarm-popup-overlay');if(overlay)overlay.classList.remove('show');document.getElementById('btn-start').style.display='inline-block';document.getElementById('btn-stop').style.display='none';document.getElementById('status-dot').className='';document.getElementById('status-text').textContent='Gestoppt';document.getElementById('members').innerHTML='<div id="empty-state">Server konfigurieren und START drücken</div>'}
 async function addMember(){const cfg=getConfig();if(!cfg.url||!cfg.email||!cfg.password){alert('Zuerst im Alarm-Tab einloggen und START drücken!');return}const name=document.getElementById('new-name').value.trim();if(!name){alert('Bitte Namen eingeben!');return}const kennung=name.toLowerCase().replace(/[^a-z0-9]/g,'')+Math.floor(Math.random()*900+100);const status=document.getElementById('add-status');status.textContent='Wird angelegt...';try{await apiCall('/api/devices','POST',{name:name,uniqueId:kennung});await loadDevices();document.getElementById('new-name').value='';status.textContent='✅ '+name+' wurde angelegt!';renderMemberList();setTimeout(()=>status.textContent='',3000)}catch(e){status.textContent='❌ Fehler: '+e.message;status.style.color='var(--red)'}}
 async function deleteMember(id,name){if(!confirm('Mitglied "'+name+'" wirklich löschen?'))return;try{await apiCall('/api/devices/'+id,'DELETE');await loadDevices();renderMemberList()}catch(e){alert('Fehler: '+e.message)}}
 function renderMemberList(){const container=document.getElementById('member-list');if(!devices.length){container.innerHTML='<div style="text-align:center;color:var(--muted);font-size:14px;padding:20px">Zuerst START im Alarm-Tab drücken</div>';return}container.innerHTML='<div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Alle Mitglieder</div>';devices.forEach(d=>{const card=document.createElement('div');card.className='member-list-card';card.innerHTML='<div><div class="member-list-name">'+esc(d.name)+'</div><div class="member-list-id">Kennung: '+esc(d.uniqueId)+'</div></div><button class="btn-sm danger" onclick="deleteMember('+d.id+', \' '+esc(String(d.name)).replace(/&#39;/g,'')+'\')">Löschen</button>';container.appendChild(card)})}

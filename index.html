@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Radgruppe Alarm</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Bebas+Neue&display=swap');
+  :root{--bg:#0a0a0a;--surface:#141414;--border:#222;--green:#00ff88;--red:#ff3b3b;--yellow:#ffd60a;--text:#e8e8e8;--muted:#555}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;display:flex;flex-direction:column}
+  header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+  h1{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--green)}
+  #status-dot{width:10px;height:10px;border-radius:50%;background:var(--muted);display:inline-block;margin-right:8px;transition:background .3s}
+  #status-dot.online{background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+  #status-dot.error{background:var(--red)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  #config{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+  .config-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;min-width:80px}
+  input,select{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:8px 12px;border-radius:4px;flex:1;min-width:0}
+  input:focus,select:focus{outline:none;border-color:var(--green)}
+  button{font-family:'Bebas Neue',sans-serif;letter-spacing:1px;font-size:16px;padding:8px 20px;border:none;border-radius:4px;cursor:pointer;transition:opacity .2s}
+  button:hover{opacity:.8}
+  #btn-start{background:var(--green);color:#000}
+  #btn-stop{background:var(--red);color:#fff;display:none}
+  #alarm-banner{display:none;background:var(--red);color:#fff;padding:14px 20px;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;animation:flash .5s infinite;text-align:center}
+  @keyframes flash{0%,100%{background:var(--red)}50%{background:#f00}}
+  #members{flex:1;padding:16px 20px;display:flex;flex-direction:column;gap:10px;overflow-y:auto}
+  .member-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;transition:border-color .3s}
+  .member-card.alert{border-color:var(--red);background:#1a0a0a}
+  .member-card.ok{border-color:var(--green)}
+  .member-card.offline{border-color:var(--muted);opacity:.5}
+  .member-name{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px}
+  .member-info{font-size:11px;color:var(--muted);margin-top:2px}
+  .member-dist{font-size:22px;font-family:'Bebas Neue',sans-serif;text-align:right}
+  .member-dist.ok{color:var(--green)}
+  .member-dist.alert{color:var(--red)}
+  .member-dist.offline{color:var(--muted)}
+  footer{padding:10px 20px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);display:flex;justify-content:space-between}
+  #empty-state{text-align:center;color:var(--muted);font-size:13px;padding:40px 20px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🚴 Radgruppe</h1>
+  <div style="display:flex;align-items:center;font-size:12px">
+    <span id="status-dot"></span>
+    <span id="status-text">Gestoppt</span>
+  </div>
+</header>
+<div id="config">
+  <div class="config-row"><label>Server</label><input id="server-url" type="text" placeholder="https://traccar-xxx.up.railway.app"></div>
+  <div class="config-row"><label>Email</label><input id="email" type="email" placeholder="deine@email.com"></div>
+  <div class="config-row"><label>Passwort</label><input id="password" type="password" placeholder="••••••••"></div>
+  <div class="config-row"><label>Leiter</label><select id="leader-select"><option value="">– nach Start wählen –</option></select></div>
+  <div class="config-row"><label>Alarm ab</label><input id="threshold" type="number" value="200" min="50" max="2000" style="max-width:100px"><span style="font-size:12px;color:var(--muted)">Meter</span><button id="btn-start" onclick="startTracking()">START</button><button id="btn-stop" onclick="stopTracking()">STOP</button></div>
+</div>
+<div id="alarm-banner">⚠️ JEMAND IST ZU WEIT WEG! ⚠️</div>
+<div id="members"><div id="empty-state">Konfiguriere den Server und drücke START</div></div>
+<footer><span id="last-update">–</span><span id="update-count">0 Updates</span></footer>
+<script>
+let interval=null,updateCount=0,audioCtx=null,alarmActive=false,devices=[];
+function getConfig(){return{url:document.getElementById('server-url').value.trim().replace(/\/$/,''),email:document.getElementById('email').value.trim(),password:document.getElementById('password').value,threshold:parseInt(document.getElementById('threshold').value)||200,leader:document.getElementById('leader-select').value}}
+async function fetchJSON(url){const cfg=getConfig();const res=await fetch(url,{headers:{'Authorization':'Basic '+btoa(cfg.email+':'+cfg.password),'Accept':'application/json'}});if(!res.ok)throw new Error('HTTP '+res.status);return res.json()}
+async function loadDevices(){const cfg=getConfig();devices=await fetchJSON(cfg.url+'/api/devices');const sel=document.getElementById('leader-select');sel.innerHTML='<option value="">– Leiter wählen –</option>';devices.forEach(d=>{const opt=document.createElement('option');opt.value=d.id;opt.textContent=d.name;if(d.name==='Ulli')opt.selected=true;sel.appendChild(opt)})}
+async function fetchPositions(){const cfg=getConfig();try{const positions=await fetchJSON(cfg.url+'/api/positions');const posMap={};positions.forEach(p=>posMap[p.deviceId]=p);updateCount++;document.getElementById('last-update').textContent='Update: '+new Date().toLocaleTimeString('de-DE');document.getElementById('update-count').textContent=updateCount+' Updates';document.getElementById('status-dot').className='online';document.getElementById('status-text').textContent='Live';const leaderPos=posMap[parseInt(cfg.leader)];const container=document.getElementById('members');container.innerHTML='';let anyAlert=false;devices.forEach(device=>{if(String(device.id)===cfg.leader)return;const pos=posMap[device.id];const card=document.createElement('div');card.className='member-card';let distText='–',distClass='offline',cardClass='offline',infoText='Kein Signal';if(pos&&leaderPos){const dist=Math.round(haversine(leaderPos.latitude,leaderPos.longitude,pos.latitude,pos.longitude));const age=Math.round((Date.now()-new Date(pos.fixTime))/1000);infoText='vor '+age+'s aktualisiert';if(age>120){distText=dist+' m';distClass='offline';cardClass='offline';infoText='Letztes Signal vor '+age+'s'}else if(dist>cfg.threshold){distText=dist+' m';distClass='alert';cardClass='alert';anyAlert=true}else{distText=dist+' m';distClass='ok';cardClass='ok'}}else if(!leaderPos){infoText='Leiter hat kein Signal';distText='?'}card.classList.add(cardClass);card.innerHTML='<div><div class="member-name">'+device.name+'</div><div class="member-info">'+infoText+'</div></div><div class="member-dist '+distClass+'">'+distText+'</div>';container.appendChild(card)});const banner=document.getElementById('alarm-banner');if(anyAlert){banner.style.display='block';if(!alarmActive){alarmActive=true;playAlarm()}}else{banner.style.display='none';alarmActive=false}}catch(e){document.getElementById('status-dot').className='error';document.getElementById('status-text').textContent='Fehler';console.error(e)}}
+function haversine(lat1,lon1,lat2,lon2){const R=6371000,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180,a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))}
+function playAlarm(){try{if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();function beep(freq,start,dur){const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();osc.connect(gain);gain.connect(audioCtx.destination);osc.frequency.value=freq;osc.type='square';gain.gain.setValueAtTime(0.3,audioCtx.currentTime+start);gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+start+dur);osc.start(audioCtx.currentTime+start);osc.stop(audioCtx.currentTime+start+dur)}beep(880,0,.2);beep(660,.25,.2);beep(880,.5,.2);beep(660,.75,.2);if(alarmActive)setTimeout(playAlarm,4000)}catch(e){console.warn(e)}}
+async function startTracking(){const cfg=getConfig();if(!cfg.url||!cfg.email||!cfg.password){alert('Bitte Server, Email und Passwort eingeben!');return}audioCtx=new(window.AudioContext||window.webkitAudioContext)();document.getElementById('empty-state')&&document.getElementById('empty-state').remove();document.getElementById('btn-start').style.display='none';document.getElementById('btn-stop').style.display='inline-block';try{await loadDevices()}catch(e){alert('Verbindung fehlgeschlagen!\n'+e.message);stopTracking();return}await fetchPositions();interval=setInterval(fetchPositions,10000)}
+function stopTracking(){clearInterval(interval);interval=null;alarmActive=false;document.getElementById('alarm-banner').style.display='none';document.getElementById('btn-start').style.display='inline-block';document.getElementById('btn-stop').style.display='none';document.getElementById('status-dot').className='';document.getElementById('status-text').textContent='Gestoppt';document.getElementById('members').innerHTML='<div id="empty-state">Konfiguriere den Server und drücke START</div>'}
+window.onload=()=>{const saved=localStorage.getItem('radgruppe-config');if(saved){const c=JSON.parse(saved);if(c.url)document.getElementById('server-url').value=c.url;if(c.email)document.getElementById('email').value=c.email;if(c.threshold)document.getElementById('threshold').value=c.threshold}};
+['server-url','email','threshold'].forEach(id=>{document.getElementById(id).addEventListener('change',()=>{localStorage.setItem('radgruppe-config',JSON.stringify({url:document.getElementById('server-url').value,email:document.getElementById('email').value,threshold:document.getElementById('threshold').value}))})});
+</script>
+</body>
+</html>

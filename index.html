@@ -7,75 +7,90 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Bebas+Neue&display=swap');
-  :root{--bg:#0a0a0a;--surface:#141414;--border:#222;--green:#00ff88;--red:#ff3b3b;--text:#e8e8e8;--muted:#555}
+  :root{
+    --bg:#111418;
+    --surface:#1b2028;
+    --surface2:#232a34;
+    --border:#3b4452;
+    --green:#5dff7a;
+    --red:#ff4d4d;
+    --yellow:#ffd34d;
+    --text:#f5f7fa;
+    --muted:#a8b2bf;
+    --muted2:#d0d6de;
+  }
   *{margin:0;padding:0;box-sizing:border-box}
-  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;display:flex;flex-direction:column}
-  header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-  h1{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--green)}
-  .tabs{display:flex;border-bottom:1px solid var(--border);overflow-x:auto}
-  .tab{flex:1;min-width:70px;padding:10px 6px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;display:flex;flex-direction:column;font-weight:500}
+  header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:#141922}
+  h1{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:2px;color:var(--green);text-shadow:0 0 10px rgba(93,255,122,.18)}
+  .tabs{display:flex;border-bottom:1px solid var(--border);overflow-x:auto;background:#141922}
+  .tab{flex:1;min-width:70px;padding:11px 6px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
   .tab.active{color:var(--green);border-bottom-color:var(--green)}
   .tab-content{display:none;flex:1;flex-direction:column;overflow-y:auto}
   .tab-content.active{display:flex}
-  #status-dot{width:10px;height:10px;border-radius:50%;background:var(--muted);display:inline-block;margin-right:8px}
+  #status-dot{width:11px;height:11px;border-radius:50%;background:var(--muted);display:inline-block;margin-right:8px}
   #status-dot.online{background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
-  #status-dot.error{background:var(--red)}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  #status-dot.error{background:var(--red);box-shadow:0 0 8px var(--red)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
   #config{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 20px;display:flex;flex-direction:column;gap:12px}
   .config-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-  label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;min-width:80px}
-  input,select{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:8px 12px;border-radius:4px;flex:1;min-width:0}
-  input:focus,select:focus{outline:none;border-color:var(--green)}
-  button{font-family:'Bebas Neue',sans-serif;letter-spacing:1px;font-size:16px;padding:8px 20px;border:none;border-radius:4px;cursor:pointer;transition:opacity .2s}
-  button:hover{opacity:.8}
-  #btn-start{background:var(--green);color:#000}
+  label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;min-width:80px;font-weight:500}
+  input,select{background:#0f1319;border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:15px;padding:10px 12px;border-radius:6px;flex:1;min-width:0}
+  input:focus,select:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 2px rgba(93,255,122,.18)}
+  button{font-family:'Bebas Neue',sans-serif;letter-spacing:1px;font-size:17px;padding:9px 20px;border:none;border-radius:6px;cursor:pointer;transition:opacity .2s,transform .1s}
+  button:hover{opacity:.9}
+  button:active{transform:scale(.98)}
+  #btn-start{background:var(--green);color:#071007}
   #btn-stop{background:var(--red);color:#fff;display:none}
-  #alarm-banner{display:none;background:var(--red);color:#fff;padding:14px 20px;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;animation:flash .5s infinite;text-align:center}
-  @keyframes flash{0%,100%{background:var(--red)}50%{background:#f00}}
+  #alarm-banner{display:none;background:var(--red);color:#fff;padding:14px 20px;font-family:'Bebas Neue',sans-serif;font-size:23px;letter-spacing:2px;animation:flash .5s infinite;text-align:center}
+  @keyframes flash{0%,100%{background:var(--red)}50%{background:#ff1f1f}}
   #members{flex:1;padding:16px 20px;display:flex;flex-direction:column;gap:10px}
-  .member-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;transition:border-color .3s}
-  .member-card.alert{border-color:var(--red);background:#1a0a0a}
-  .member-card.ok{border-color:var(--green)}
-  .member-card.offline{border-color:var(--muted);opacity:.5}
-  .member-name{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px}
-  .member-info{font-size:11px;color:var(--muted);margin-top:2px}
-  .member-dist{font-size:22px;font-family:'Bebas Neue',sans-serif;text-align:right}
+  .member-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:15px 16px;display:flex;align-items:center;justify-content:space-between;transition:border-color .3s,background .3s;box-shadow:0 1px 0 rgba(255,255,255,.03) inset}
+  .member-card.alert{border-color:var(--red);background:#2a1518}
+  .member-card.ok{border-color:rgba(93,255,122,.75);background:#17251f}
+  .member-card.offline{border-color:#56606d;background:#1a1f27;opacity:1}
+  .member-name{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1.4px;color:var(--text)}
+  .member-info{font-size:13px;color:var(--muted);margin-top:4px;font-weight:500}
+  .member-card.ok .member-info{color:var(--green)}
+  .member-card.alert .member-info{color:#ff9b9b}
+  .member-card.offline .member-info{color:var(--yellow)}
+  .member-dist{font-size:25px;font-family:'Bebas Neue',sans-serif;text-align:right;letter-spacing:1px;min-width:70px}
   .member-dist.ok{color:var(--green)}
   .member-dist.alert{color:var(--red)}
-  .member-dist.offline{color:var(--muted)}
-  footer{padding:10px 20px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);display:flex;justify-content:space-between}
-  #empty-state{text-align:center;color:var(--muted);font-size:13px;padding:40px 20px}
+  .member-dist.offline{color:var(--muted2)}
+  footer{padding:12px 20px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);display:flex;justify-content:space-between;background:#141922}
+  #empty-state{text-align:center;color:var(--muted);font-size:14px;padding:40px 20px}
 
   /* INVITE */
   .invite-wrap{padding:16px 20px;display:flex;flex-direction:column;gap:16px}
   .invite-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px}
-  .invite-name{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--green);margin-bottom:12px}
-  .invite-info{font-size:11px;color:var(--muted);margin-bottom:4px}
-  .invite-value{font-size:13px;color:var(--text);background:var(--bg);padding:8px 12px;border-radius:4px;border:1px solid var(--border);margin-bottom:10px;word-break:break-all}
+  .invite-name{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--green);margin-bottom:12px;letter-spacing:1px}
+  .invite-info{font-size:12px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:1px}
+  .invite-value{font-size:14px;color:var(--text);background:#0f1319;padding:9px 12px;border-radius:6px;border:1px solid var(--border);margin-bottom:10px;word-break:break-all}
   .invite-buttons{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-  .btn-sm{font-family:'Bebas Neue',sans-serif;font-size:14px;padding:6px 14px;border-radius:4px;cursor:pointer;border:1px solid var(--green);background:var(--surface);color:var(--green)}
-  .btn-sm:hover{background:var(--green);color:#000}
-  .btn-sm.solid{background:var(--green);color:#000;border:none}
+  .btn-sm{font-family:'Bebas Neue',sans-serif;font-size:15px;padding:7px 14px;border-radius:5px;cursor:pointer;border:1px solid var(--green);background:var(--surface);color:var(--green)}
+  .btn-sm:hover{background:var(--green);color:#071007}
+  .btn-sm.solid{background:var(--green);color:#071007;border:none}
   .btn-sm.danger{border-color:var(--red);color:var(--red)}
   .btn-sm.danger:hover{background:var(--red);color:#fff}
   .qr-wrap{background:#fff;display:inline-block;padding:10px;border-radius:8px;margin-top:8px}
-  .invite-note{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.6}
+  .invite-note{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6}
 
   /* MEMBERS TAB */
   .members-wrap{padding:16px 20px;display:flex;flex-direction:column;gap:12px}
   .add-form{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:10px}
-  .add-form-title{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--green)}
+  .add-form-title{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--green)}
   .add-form input{width:100%}
-  .member-list-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
-  .member-list-name{font-family:'Bebas Neue',sans-serif;font-size:18px}
-  .member-list-id{font-size:11px;color:var(--muted)}
+  .member-list-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+  .member-list-name{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text)}
+  .member-list-id{font-size:12px;color:var(--muted)}
 
   /* SETUP */
   .setup-wrap{padding:16px 20px;display:flex;flex-direction:column;gap:12px}
-  .setup-step{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:14px 16px}
-  .setup-num{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--green);line-height:1}
-  .setup-title{font-family:'Bebas Neue',sans-serif;font-size:18px;margin:4px 0}
-  .setup-desc{font-size:12px;color:var(--muted);line-height:1.6}
+  .setup-step{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
+  .setup-num{font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--green);line-height:1}
+  .setup-title{font-family:'Bebas Neue',sans-serif;font-size:20px;margin:4px 0;color:var(--text)}
+  .setup-desc{font-size:13px;color:var(--muted);line-height:1.6}
   a{color:var(--green)}
 </style>
 </head>
@@ -107,7 +122,7 @@
     <div class="config-row">
       <label>Alarm ab</label>
       <input id="threshold" type="number" value="200" min="50" max="2000" style="max-width:100px">
-      <span style="font-size:12px;color:var(--muted)">Meter</span>
+      <span style="font-size:13px;color:var(--muted)">Meter</span>
       <button id="btn-start" onclick="startTracking()">START</button>
       <button id="btn-stop" onclick="stopTracking()">STOP</button>
     </div>
@@ -124,16 +139,16 @@
       <div class="add-form-title">➕ Neues Mitglied</div>
       <input id="new-name" type="text" placeholder="Name (z.B. Peter)">
       <button class="btn-sm solid" onclick="addMember()" style="font-size:16px;padding:10px">HINZUFÜGEN</button>
-      <div id="add-status" style="font-size:12px;color:var(--muted)"></div>
+      <div id="add-status" style="font-size:13px;color:var(--muted)"></div>
     </div>
-    <div id="member-list"><div style="text-align:center;color:var(--muted);font-size:13px;padding:20px">Zuerst START im Alarm-Tab drücken</div></div>
+    <div id="member-list"><div style="text-align:center;color:var(--muted);font-size:14px;padding:20px">Zuerst START im Alarm-Tab drücken</div></div>
   </div>
 </div>
 
 <!-- INVITE TAB -->
 <div class="tab-content" id="tab-invite">
   <div class="invite-wrap" id="invite-content">
-    <div style="text-align:center;color:var(--muted);font-size:13px;padding:40px 20px">Zuerst auf "Alarm" Tab gehen und START drücken</div>
+    <div style="text-align:center;color:var(--muted);font-size:14px;padding:40px 20px">Zuerst auf "Alarm" Tab gehen und START drücken</div>
   </div>
 </div>
 
@@ -215,6 +230,14 @@ async function loadDevices() {
   });
 }
 
+function formatAge(seconds){
+  if(seconds < 5) return 'Live';
+  if(seconds < 60) return 'vor '+seconds+' s';
+  if(seconds < 3600) return 'vor '+Math.round(seconds/60)+' min';
+  if(seconds < 86400) return 'vor '+Math.round(seconds/3600)+' h';
+  return 'vor '+Math.round(seconds/86400)+' d';
+}
+
 async function fetchPositions() {
   const cfg=getConfig();
   try {
@@ -236,10 +259,10 @@ async function fetchPositions() {
       let distText='–',distClass='offline',cardClass='offline',infoText='Kein Signal';
       if(pos&&leaderPos){
         const dist=Math.round(haversine(leaderPos.latitude,leaderPos.longitude,pos.latitude,pos.longitude));
-        const age=Math.round((Date.now()-new Date(pos.fixTime))/1000);
-        if(age>120){distText=dist+' m';distClass='offline';cardClass='offline';infoText='Letztes Signal vor '+age+'s'}
-        else if(dist>cfg.threshold){distText=dist+' m';distClass='alert';cardClass='alert';anyAlert=true;infoText='vor '+age+'s'}
-        else{distText=dist+' m';distClass='ok';cardClass='ok';infoText='vor '+age+'s'}
+        const age=Math.max(0,Math.round((Date.now()-new Date(pos.fixTime))/1000));
+        if(age>120){distText=dist+' m';distClass='offline';cardClass='offline';infoText=formatAge(age)}
+        else if(dist>cfg.threshold){distText=dist+' m';distClass='alert';cardClass='alert';anyAlert=true;infoText=formatAge(age)}
+        else{distText=dist+' m';distClass='ok';cardClass='ok';infoText=formatAge(age)}
       } else if(!leaderPos){infoText='Leiter hat kein Signal';distText='?'}
       const card=document.createElement('div');
       card.className='member-card '+cardClass;
@@ -329,12 +352,13 @@ async function deleteMember(id, name){
 
 function renderMemberList(){
   const container=document.getElementById('member-list');
-  if(!devices.length){container.innerHTML='<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px">Zuerst START im Alarm-Tab drücken</div>';return}
-  container.innerHTML='<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Alle Mitglieder</div>';
+  if(!devices.length){container.innerHTML='<div style="text-align:center;color:var(--muted);font-size:14px;padding:20px">Zuerst START im Alarm-Tab drücken</div>';return}
+  container.innerHTML='<div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Alle Mitglieder</div>';
   devices.forEach(d=>{
     const card=document.createElement('div');
     card.className='member-list-card';
-    card.innerHTML='<div><div class="member-list-name">'+d.name+'</div><div class="member-list-id">Kennung: '+d.uniqueId+'</div></div><button class="btn-sm danger" onclick="deleteMember('+d.id+', \''+d.name+'\')">Löschen</button>';
+    card.innerHTML='<div><div class="member-list-name">'+d.name+'</div><div class="member-list-id">Kennung: '+d.uniqueId+'</div></div><button class="btn-sm danger" type="button">Löschen</button>';
+    card.querySelector('button').onclick=function(){deleteMember(d.id,d.name)};
     container.appendChild(card);
   });
 }
@@ -343,7 +367,7 @@ function renderMemberList(){
 function renderInvites(){
   const cfg=getConfig();
   const container=document.getElementById('invite-content');
-  if(!devices.length){container.innerHTML='<div style="text-align:center;color:var(--muted);font-size:13px;padding:40px 20px">Zuerst auf "Alarm" Tab gehen und START drücken</div>';return}
+  if(!devices.length){container.innerHTML='<div style="text-align:center;color:var(--muted);font-size:14px;padding:40px 20px">Zuerst auf "Alarm" Tab gehen und START drücken</div>';return}
   container.innerHTML='';
   const members=devices.filter(d=>String(d.id)!==cfg.leader);
   members.forEach(device=>{
@@ -404,22 +428,21 @@ function logout(){
 // JOIN PAGE
 function showLoginPage(){
   document.body.innerHTML=`
-    <div style="background:#0a0a0a;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:#00ff88;letter-spacing:3px;margin-bottom:8px">🚴 RADGRUPPE</div>
-      <div style="color:#555;font-size:12px;margin-bottom:32px">Gruppenleiter Login</div>
+    <div style="background:#111418;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;color:#f5f7fa">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:38px;color:#5dff7a;letter-spacing:3px;margin-bottom:8px">🚴 RADGRUPPE</div>
+      <div style="color:#a8b2bf;font-size:13px;margin-bottom:32px">Gruppenleiter Login</div>
       <form id="login-form" onsubmit="doLogin(event)" autocomplete="on" style="width:100%;max-width:360px;display:flex;flex-direction:column;gap:14px">
         <input name="url" id="login-url" type="url" placeholder="Server-URL" autocomplete="url"
-          style="background:#141414;border:1px solid #333;color:#e8e8e8;font-family:monospace;font-size:13px;padding:12px 16px;border-radius:6px;width:100%">
+          style="background:#0f1319;border:1px solid #3b4452;color:#f5f7fa;font-family:monospace;font-size:14px;padding:12px 16px;border-radius:6px;width:100%">
         <input name="username" id="login-email" type="email" placeholder="Email" autocomplete="username"
-          style="background:#141414;border:1px solid #333;color:#e8e8e8;font-family:monospace;font-size:13px;padding:12px 16px;border-radius:6px;width:100%">
+          style="background:#0f1319;border:1px solid #3b4452;color:#f5f7fa;font-family:monospace;font-size:14px;padding:12px 16px;border-radius:6px;width:100%">
         <input name="password" id="login-password" type="password" placeholder="Passwort" autocomplete="current-password"
-          style="background:#141414;border:1px solid #333;color:#e8e8e8;font-family:monospace;font-size:13px;padding:12px 16px;border-radius:6px;width:100%">
-        <div id="login-error" style="color:#ff3b3b;font-size:12px;display:none">Verbindung fehlgeschlagen. Bitte prüfe deine Daten.</div>
-        <button type="submit" style="background:#00ff88;color:#000;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;padding:12px;border:none;border-radius:6px;cursor:pointer">ANMELDEN</button>
+          style="background:#0f1319;border:1px solid #3b4452;color:#f5f7fa;font-family:monospace;font-size:14px;padding:12px 16px;border-radius:6px;width:100%">
+        <div id="login-error" style="color:#ff4d4d;font-size:13px;display:none">Verbindung fehlgeschlagen. Bitte prüfe deine Daten.</div>
+        <button type="submit" style="background:#5dff7a;color:#071007;font-family:'Bebas Neue',sans-serif;font-size:21px;letter-spacing:2px;padding:12px;border:none;border-radius:6px;cursor:pointer">ANMELDEN</button>
       </form>
     </div>
   `;
-  // Pre-fill from localStorage
   const saved=localStorage.getItem('rg-config');
   if(saved){
     const c=JSON.parse(saved);
@@ -439,7 +462,6 @@ async function doLogin(e){
   try {
     const res=await fetch(url+'/api/devices',{headers:{'Authorization':'Basic '+btoa(email+':'+password),'Accept':'application/json'}});
     if(!res.ok) throw new Error('HTTP '+res.status);
-    // Save and launch app
     localStorage.setItem('rg-config',JSON.stringify({url,email,threshold:'200'}));
     localStorage.setItem('rg-password',password);
     location.reload();
@@ -457,31 +479,31 @@ window.onload=()=>{
     const kennung=params.get('kennung')||'';
     const name=params.get('name')||'';
     document.body.innerHTML=`
-      <div style="background:#0a0a0a;min-height:100vh;color:#e8e8e8;font-family:sans-serif;padding:24px;display:flex;flex-direction:column;gap:16px;max-width:500px;margin:0 auto">
-        <div style="font-size:32px;font-weight:900;color:#00ff88;letter-spacing:2px">🚴 RADGRUPPE</div>
-        <div style="color:#555;font-size:13px">Einladung für</div>
+      <div style="background:#111418;min-height:100vh;color:#f5f7fa;font-family:sans-serif;padding:24px;display:flex;flex-direction:column;gap:16px;max-width:500px;margin:0 auto">
+        <div style="font-size:34px;font-weight:900;color:#5dff7a;letter-spacing:2px">🚴 RADGRUPPE</div>
+        <div style="color:#a8b2bf;font-size:13px">Einladung für</div>
         <div style="font-size:28px;font-weight:900">${name}</div>
-        <div style="background:#141414;border:1px solid #222;border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:10px">
-          <div style="font-size:11px;color:#555;text-transform:uppercase">Schritt 1: App installieren</div>
-          <a href="https://apps.apple.com/app/traccar-client/id843156974" style="background:#00ff88;color:#000;font-size:16px;font-weight:bold;padding:12px;border-radius:6px;text-decoration:none;text-align:center;display:block">📱 iOS App Store</a>
-          <a href="https://play.google.com/store/apps/details?id=org.traccar.client" style="background:#00ff88;color:#000;font-size:16px;font-weight:bold;padding:12px;border-radius:6px;text-decoration:none;text-align:center;display:block">🤖 Android Play Store</a>
+        <div style="background:#1b2028;border:1px solid #3b4452;border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:12px;color:#a8b2bf;text-transform:uppercase">Schritt 1: App installieren</div>
+          <a href="https://apps.apple.com/app/traccar-client/id843156974" style="background:#5dff7a;color:#071007;font-size:16px;font-weight:bold;padding:12px;border-radius:6px;text-decoration:none;text-align:center;display:block">📱 iOS App Store</a>
+          <a href="https://play.google.com/store/apps/details?id=org.traccar.client" style="background:#5dff7a;color:#071007;font-size:16px;font-weight:bold;padding:12px;border-radius:6px;text-decoration:none;text-align:center;display:block">🤖 Android Play Store</a>
         </div>
-        <div style="background:#141414;border:1px solid #222;border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:8px">
-          <div style="font-size:11px;color:#555;text-transform:uppercase">Schritt 2: In Traccar Client eingeben</div>
-          <div style="font-size:11px;color:#555">SERVER-URL</div>
-          <div style="background:#0a0a0a;padding:10px;border-radius:4px;font-size:12px;word-break:break-all">${server}</div>
-          <button id="btn-s" onclick="cp('${server}','btn-s')" style="background:#141414;border:1px solid #00ff88;color:#00ff88;font-size:14px;font-weight:bold;padding:8px;border-radius:4px;cursor:pointer">Server kopieren</button>
-          <div style="font-size:11px;color:#555;margin-top:6px">DEINE KENNUNG</div>
-          <div style="background:#0a0a0a;padding:10px;border-radius:4px;font-size:22px;font-weight:900;letter-spacing:3px">${kennung}</div>
-          <button id="btn-k" onclick="cp('${kennung}','btn-k')" style="background:#141414;border:1px solid #00ff88;color:#00ff88;font-size:14px;font-weight:bold;padding:8px;border-radius:4px;cursor:pointer">Kennung kopieren</button>
+        <div style="background:#1b2028;border:1px solid #3b4452;border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:8px">
+          <div style="font-size:12px;color:#a8b2bf;text-transform:uppercase">Schritt 2: In Traccar Client eingeben</div>
+          <div style="font-size:12px;color:#a8b2bf">SERVER-URL</div>
+          <div style="background:#0f1319;padding:10px;border-radius:4px;font-size:13px;word-break:break-all;color:#f5f7fa">${server}</div>
+          <button id="btn-s" onclick="cp('${server}','btn-s')" style="background:#1b2028;border:1px solid #5dff7a;color:#5dff7a;font-size:14px;font-weight:bold;padding:8px;border-radius:4px;cursor:pointer">Server kopieren</button>
+          <div style="font-size:12px;color:#a8b2bf;margin-top:6px">DEINE KENNUNG</div>
+          <div style="background:#0f1319;padding:10px;border-radius:4px;font-size:22px;font-weight:900;letter-spacing:3px;color:#f5f7fa">${kennung}</div>
+          <button id="btn-k" onclick="cp('${kennung}','btn-k')" style="background:#1b2028;border:1px solid #5dff7a;color:#5dff7a;font-size:14px;font-weight:bold;padding:8px;border-radius:4px;cursor:pointer">Kennung kopieren</button>
         </div>
-        <div style="background:#141414;border:1px solid #222;border-radius:8px;padding:16px">
-          <div style="font-size:11px;color:#555;text-transform:uppercase;margin-bottom:8px">Schritt 3: Standort erlauben</div>
-          <div style="font-size:13px;color:#888;line-height:1.8">iOS: Einstellungen → Traccar Client → Ort → <strong style="color:#e8e8e8">Immer</strong><br>Android: Standort → <strong style="color:#e8e8e8">Immer zulassen</strong></div>
+        <div style="background:#1b2028;border:1px solid #3b4452;border-radius:8px;padding:16px">
+          <div style="font-size:12px;color:#a8b2bf;text-transform:uppercase;margin-bottom:8px">Schritt 3: Standort erlauben</div>
+          <div style="font-size:14px;color:#d0d6de;line-height:1.8">iOS: Einstellungen → Traccar Client → Ort → <strong style="color:#f5f7fa">Immer</strong><br>Android: Standort → <strong style="color:#f5f7fa">Immer zulassen</strong></div>
         </div>
-        <div style="background:#141414;border:1px solid #222;border-radius:8px;padding:16px">
-          <div style="font-size:11px;color:#555;text-transform:uppercase;margin-bottom:8px">Schritt 4: Tracking einschalten</div>
-          <div style="font-size:13px;color:#888;line-height:1.8">In Traccar Client:<br><strong style="color:#00ff88">Kontinuierliches Tracking</strong> einschalten<br><br>Dann Komoot öffnen und losradeln! 🚴</div>
+        <div style="background:#1b2028;border:1px solid #3b4452;border-radius:8px;padding:16px">
+          <div style="font-size:12px;color:#a8b2bf;text-transform:uppercase;margin-bottom:8px">Schritt 4: Tracking einschalten</div>
+          <div style="font-size:14px;color:#d0d6de;line-height:1.8">In Traccar Client:<br><strong style="color:#5dff7a">Kontinuierliches Tracking</strong> einschalten<br><br>Dann Komoot öffnen und losradeln! 🚴</div>
         </div>
       </div>
     `;

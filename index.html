@@ -83,9 +83,10 @@
 
 <header>
   <h1>🚴 Radgruppe</h1>
-  <div style="display:flex;align-items:center;font-size:12px">
+  <div style="display:flex;align-items:center;gap:10px;font-size:12px">
     <span id="status-dot"></span>
     <span id="status-text">Gestoppt</span>
+    <button onclick="logout()" style="background:none;border:1px solid var(--muted);color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;padding:3px 8px;border-radius:3px;cursor:pointer">Abmelden</button>
   </div>
 </header>
 
@@ -391,9 +392,64 @@ function saveConfig(){
     email:document.getElementById('email').value,
     threshold:document.getElementById('threshold').value
   }));
+  const pw=document.getElementById('password').value;
+  if(pw)localStorage.setItem('rg-password',pw);
+}
+
+function logout(){
+  localStorage.removeItem('rg-password');
+  location.reload();
 }
 
 // JOIN PAGE
+function showLoginPage(){
+  document.body.innerHTML=`
+    <div style="background:#0a0a0a;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:#00ff88;letter-spacing:3px;margin-bottom:8px">🚴 RADGRUPPE</div>
+      <div style="color:#555;font-size:12px;margin-bottom:32px">Gruppenleiter Login</div>
+      <form id="login-form" onsubmit="doLogin(event)" autocomplete="on" style="width:100%;max-width:360px;display:flex;flex-direction:column;gap:14px">
+        <input name="url" id="login-url" type="url" placeholder="Server-URL" autocomplete="url"
+          style="background:#141414;border:1px solid #333;color:#e8e8e8;font-family:monospace;font-size:13px;padding:12px 16px;border-radius:6px;width:100%">
+        <input name="username" id="login-email" type="email" placeholder="Email" autocomplete="username"
+          style="background:#141414;border:1px solid #333;color:#e8e8e8;font-family:monospace;font-size:13px;padding:12px 16px;border-radius:6px;width:100%">
+        <input name="password" id="login-password" type="password" placeholder="Passwort" autocomplete="current-password"
+          style="background:#141414;border:1px solid #333;color:#e8e8e8;font-family:monospace;font-size:13px;padding:12px 16px;border-radius:6px;width:100%">
+        <div id="login-error" style="color:#ff3b3b;font-size:12px;display:none">Verbindung fehlgeschlagen. Bitte prüfe deine Daten.</div>
+        <button type="submit" style="background:#00ff88;color:#000;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;padding:12px;border:none;border-radius:6px;cursor:pointer">ANMELDEN</button>
+      </form>
+    </div>
+  `;
+  // Pre-fill from localStorage
+  const saved=localStorage.getItem('rg-config');
+  if(saved){
+    const c=JSON.parse(saved);
+    if(c.url)document.getElementById('login-url').value=c.url;
+    if(c.email)document.getElementById('login-email').value=c.email;
+  }
+}
+
+async function doLogin(e){
+  e.preventDefault();
+  const url=document.getElementById('login-url').value.trim().replace(/\/$/,'');
+  const email=document.getElementById('login-email').value.trim();
+  const password=document.getElementById('login-password').value;
+  const btn=e.target.querySelector('button');
+  btn.textContent='VERBINDE...';
+  btn.disabled=true;
+  try {
+    const res=await fetch(url+'/api/devices',{headers:{'Authorization':'Basic '+btoa(email+':'+password),'Accept':'application/json'}});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    // Save and launch app
+    localStorage.setItem('rg-config',JSON.stringify({url,email,threshold:'200'}));
+    localStorage.setItem('rg-password',password);
+    location.reload();
+  } catch(err){
+    document.getElementById('login-error').style.display='block';
+    btn.textContent='ANMELDEN';
+    btn.disabled=false;
+  }
+}
+
 window.onload=()=>{
   const params=new URLSearchParams(window.location.search);
   if(params.get('join')){
@@ -438,11 +494,15 @@ window.onload=()=>{
     return;
   }
   const saved=localStorage.getItem('rg-config');
-  if(saved){
+  const savedPw=localStorage.getItem('rg-password');
+  if(saved&&savedPw){
     const c=JSON.parse(saved);
     if(c.url)document.getElementById('server-url').value=c.url;
     if(c.email)document.getElementById('email').value=c.email;
     if(c.threshold)document.getElementById('threshold').value=c.threshold;
+    document.getElementById('password').value=savedPw;
+  } else {
+    showLoginPage();
   }
 };
 ['server-url','email','threshold'].forEach(id=>{

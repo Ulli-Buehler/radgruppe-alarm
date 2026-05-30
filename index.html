@@ -349,6 +349,7 @@
     <div class="config-row">
       <label>Push</label>
       <button id="btn-push" onclick="enablePush()">PUSH AKTIVIEREN</button>
+      <button id="btn-push-off" onclick="disablePush()" style="background:#2a1518;color:#ffb2b2;border:1px solid var(--red)">PUSH AUS</button>
       <span id="push-status">Noch nicht aktiv</span>
     </div>
   </div>
@@ -359,7 +360,10 @@
     <div id="alarm-popup">
       <div id="alarm-popup-title">⚠️ WARNUNG</div>
       <div id="alarm-popup-text">Alarm</div>
-      <button onclick="closeAlarmPopup()">OK</button>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button onclick="closeAlarmPopup()">OK</button>
+        <button onclick="disablePush()" style="background:#2a1518;color:#ffb2b2;border:1px solid var(--red)">PUSH AUS</button>
+      </div>
     </div>
   </div>
 
@@ -987,6 +991,7 @@ async function enablePush(){
     const permission=await Notification.requestPermission();
     if(permission!=='granted'){
       status.textContent='Push nicht erlaubt';
+      localStorage.setItem('rg-push-active','0');
       return;
     }
 
@@ -1020,11 +1025,53 @@ async function enablePush(){
 
     if(!response.ok)throw new Error('HTTP '+response.status);
 
+    localStorage.setItem('rg-push-active','1');
     status.textContent='Push aktiv';
     alert('Push ist aktiviert. iPhone-Banner erscheinen, wenn die App als Homescreen-PWA installiert ist.');
   }catch(error){
     status.textContent='Push Fehler';
     alert('Push konnte nicht aktiviert werden: '+error.message);
+  }
+}
+
+async function disablePush(showMessage=true){
+  const status=document.getElementById('push-status');
+
+  try{
+    if(status)status.textContent='Push wird ausgeschaltet...';
+
+    if('serviceWorker' in navigator && 'PushManager' in window){
+      const registration=await navigator.serviceWorker.ready.catch(()=>null);
+
+      if(registration){
+        const subscription=await registration.pushManager.getSubscription();
+        if(subscription){
+          await subscription.unsubscribe();
+        }
+      }
+    }
+
+    const response=await fetch('/api/unsubscribe',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({disabledAt:Date.now()})
+    });
+
+    if(!response.ok)throw new Error('HTTP '+response.status);
+
+    localStorage.setItem('rg-push-active','0');
+
+    if(status)status.textContent='Push ausgeschaltet';
+
+    const overlay=document.getElementById('alarm-popup-overlay');
+    if(overlay)overlay.classList.remove('show');
+
+    if(showMessage){
+      alert('Push ist ausgeschaltet. Es kommen keine iPhone-Banner mehr von Radgruppe Alarm.');
+    }
+  }catch(error){
+    if(status)status.textContent='Push-Aus Fehler';
+    alert('Push konnte nicht ausgeschaltet werden: '+error.message);
   }
 }
 
@@ -1059,6 +1106,11 @@ window.onload=()=>{
     document.getElementById('password').value=savedPassword;
   }else{
     showLoginPage();
+  }
+
+  const pushStatus=document.getElementById('push-status');
+  if(pushStatus){
+    pushStatus.textContent=localStorage.getItem('rg-push-active')==='1'?'Push aktiv':'Noch nicht aktiv';
   }
 };
 

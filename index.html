@@ -971,22 +971,18 @@ async function renderInvites(){
     card.className='invite-card';
     card.innerHTML=
       '<div class="invite-name">'+esc(device.name)+'</div>'+
-      '<div class="invite-info">EINLADUNGSLINK</div>'+
       '<div class="invite-buttons">'+
         '<button class="btn-sm solid" onclick="shareInvite(\''+esc(device.name)+'\',\''+esc(joinUrl)+'\')">🔗 Link verschicken</button>'+
       '</div>'+
-      '<div class="invite-value">'+esc(joinUrl)+'</div>'+
-      '<div class="invite-info">QR-CODE ZUM LINK</div>'+
-      '<div class="qr-wrap" id="qr-'+device.id+'"></div>'+
-      '<div class="invite-note">Der QR-Code und der Link öffnen die Einrichtungsseite für '+esc(device.name)+'. Dort sieht die Zielperson dann die Buttons „Traccar öffnen“, „URL kopieren“ und „Kennung kopieren“.</div>';
+      '<div class="qr-wrap" id="qr-'+device.id+'"></div>';
 
     container.appendChild(card);
 
     setTimeout(()=>{
       new QRCode(document.getElementById('qr-'+device.id),{
         text:joinUrl,
-        width:150,
-        height:150,
+        width:120,
+        height:120,
         colorDark:'#000',
         colorLight:'#fff'
       });

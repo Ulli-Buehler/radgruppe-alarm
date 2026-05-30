@@ -1029,12 +1029,15 @@ function logout(){
 }
 
 function showLoginPage(){
-  document.body.innerHTML='<div style="background:#111418;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px"><div style="font-family:Bebas Neue,sans-serif;font-size:38px;color:#5dff7a;letter-spacing:3px;margin-bottom:8px">🚴 RADGRUPPE</div><div style="color:#a8b2bf;font-size:13px;margin-bottom:32px">Gruppentourguide Login</div><form id="login-form" onsubmit="doLogin(event)" autocomplete="on" style="width:100%;max-width:360px;display:flex;flex-direction:column;gap:14px"><input name="url" id="login-url" type="url" placeholder="Server-URL" autocomplete="url" style="background:#0f1319;border:1px solid #3b4452;color:#f5f7fa;font-family:monospace;font-size:14px;padding:12px 16px;border-radius:6px;width:100%"><input name="username" id="login-email" type="email" placeholder="Email" autocomplete="username" style="background:#0f1319;border:1px solid #3b4452;color:#f5f7fa;font-family:monospace;font-size:14px;padding:12px 16px;border-radius:6px;width:100%"><input name="password" id="login-password" type="password" placeholder="Passwort" autocomplete="current-password" style="background:#0f1319;border:1px solid #3b4452;color:#f5f7fa;font-family:monospace;font-size:14px;padding:12px 16px;border-radius:6px;width:100%"><div id="login-error" style="color:#ff4d4d;font-size:13px;display:none">Verbindung fehlgeschlagen. Bitte prüfe deine Daten.</div><button type="submit" style="background:#5dff7a;color:#071007;font-family:Bebas Neue,sans-serif;font-size:20px;letter-spacing:2px;padding:12px;border:none;border-radius:6px;cursor:pointer">ANMELDEN</button></form></div>';
+  document.body.innerHTML='<div style="background:#111418;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px"><div style="font-family:Bebas Neue,sans-serif;font-size:38px;color:#5dff7a;letter-spacing:3px;margin-bottom:8px">🚴 RADGRUPPE</div><div style="color:#a8b2bf;font-size:13px;margin-bottom:32px">Gruppentourguide Login</div><form id="login-form" onsubmit="doLogin(event)" autocomplete="on" style="width:100%;max-width:360px;display:flex;flex-direction:column;gap:14px"><input name="url" id="login-url" type="url" value="https://traccar-production-c93e.up.railway.app" placeholder="Server-URL" autocomplete="url" style="background:#0f1319;border:1px solid #3b4452;color:#f5f7fa;font-family:monospace;font-size:14px;padding:12px 16px;border-radius:6px;width:100%"><input name="username" id="login-email" type="email" placeholder="Email" autocomplete="username" style="background:#0f1319;border:1px solid #3b4452;color:#f5f7fa;font-family:monospace;font-size:14px;padding:12px 16px;border-radius:6px;width:100%"><input name="password" id="login-password" type="password" placeholder="Passwort" autocomplete="current-password" style="background:#0f1319;border:1px solid #3b4452;color:#f5f7fa;font-family:monospace;font-size:14px;padding:12px 16px;border-radius:6px;width:100%"><div id="login-error" style="color:#ff4d4d;font-size:13px;display:none">Verbindung fehlgeschlagen. Bitte prüfe deine Daten.</div><button type="submit" style="background:#5dff7a;color:#071007;font-family:Bebas Neue,sans-serif;font-size:20px;letter-spacing:2px;padding:12px;border:none;border-radius:6px;cursor:pointer">ANMELDEN</button></form></div>';
+
+  const loginUrlInput=document.getElementById('login-url');
+  if(loginUrlInput && !loginUrlInput.value.trim())loginUrlInput.value=DEFAULT_TRACCAR_SERVER;
 
   const saved=localStorage.getItem('rg-config');
   if(saved){
     const config=JSON.parse(saved);
-    if(config.url)document.getElementById('login-url').value=config.url;
+    document.getElementById('login-url').value=config.url || DEFAULT_TRACCAR_SERVER;
     if(config.email)document.getElementById('login-email').value=config.email;
   }
 }
@@ -1042,7 +1045,7 @@ function showLoginPage(){
 async function doLogin(event){
   event.preventDefault();
 
-  const url=document.getElementById('login-url').value.trim().replace(/\/$/,'');
+  const url=(document.getElementById('login-url').value.trim() || DEFAULT_TRACCAR_SERVER).replace(/\/$/,'');
   const email=document.getElementById('login-email').value.trim();
   const password=document.getElementById('login-password').value;
   const button=event.target.querySelector('button');
@@ -1248,6 +1251,9 @@ window.onload=()=>{
       '</div>';
     return;
   }
+
+  const loginUrlInput=document.getElementById('login-url');
+  if(loginUrlInput && !loginUrlInput.value.trim())loginUrlInput.value=DEFAULT_TRACCAR_SERVER;
 
   const saved=localStorage.getItem('rg-config');
   const savedPassword=localStorage.getItem('rg-password');

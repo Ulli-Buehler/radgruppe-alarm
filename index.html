@@ -899,6 +899,11 @@ function openTraccarStore(){
 }
 
 
+
+function openTraccarApp(){
+  window.location.href=getTraccarStoreUrl();
+}
+
 function makeTraccarQuickText(server,kennung){
   return [
     'Traccar Client Einstellungen:',
@@ -1287,19 +1292,3 @@ window.onload=()=>{
 </script>
 </body>
 </html>
-
-
-function getTraccarStoreUrl(){
-  const ua=navigator.userAgent||'';
-
-  if(/android/i.test(ua)){
-    return 'https://play.google.com/store/apps/details?id=org.traccar.client';
-  }
-
-  return 'https://apps.apple.com/app/traccar-client/id843156974';
-}
-
-function openTraccarApp(){
-  window.location.href=getTraccarStoreUrl();
-}
-

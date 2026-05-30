@@ -971,29 +971,14 @@ async function renderInvites(){
     card.className='invite-card';
     card.innerHTML=
       '<div class="invite-name">'+esc(device.name)+'</div>'+
-      '<div class="invite-info">SCHNELL-EINRICHTUNG</div>'+
+      '<div class="invite-info">EINLADUNGSLINK</div>'+
       '<div class="invite-buttons">'+
-        '<button class="btn-sm solid" onclick="openTraccarApp()">📲 Traccar öffnen</button>'+
-        '<button class="btn-sm" onclick="copyText(\''+esc(server)+'\',this)">URL kopieren</button>'+
-        '<button class="btn-sm" onclick="copyText(\''+esc(kennung)+'\',this)">Kennung kopieren</button>'+
+        '<button class="btn-sm solid" onclick="shareInvite(\''+esc(device.name)+'\',\''+esc(joinUrl)+'\')">🔗 Link verschicken</button>'+
       '</div>'+
-      '<div class="invite-note">Einstellungen im Traccar Client:<br><br>'+
-        '1. Traccar Client öffnen.<br>'+
-        '2. Server-URL einfügen.<br>'+
-        '3. Kennung / Device ID einfügen.<br>'+
-        '4. Standort auf <strong style="color:var(--text)">Immer</strong> erlauben.<br>'+
-        '5. Genauigkeit auf <strong style="color:var(--text)">Höchste/Hoch</strong> stellen.<br>'+
-        '6. Intervall auf <strong style="color:var(--text)">10 Sekunden</strong> stellen.<br>'+
-        '7. Distanz auf <strong style="color:var(--text)">0 Meter</strong> stellen.<br>'+
-        '8. Offline-Puffer einschalten, falls vorhanden.<br>'+
-        '9. Tracking einschalten.</div>'+
-      '<div class="invite-info">SERVER-URL</div>'+
-      '<div class="invite-value">'+esc(server)+'</div>'+
-      '<div class="invite-info">KENNUNG / DEVICE ID</div>'+
-      '<div class="invite-value">'+esc(kennung)+'</div>'+
-      '<div class="invite-info">QR-CODE</div>'+
+      '<div class="invite-value">'+esc(joinUrl)+'</div>'+
+      '<div class="invite-info">QR-CODE ZUM LINK</div>'+
       '<div class="qr-wrap" id="qr-'+device.id+'"></div>'+
-      '<div class="invite-note">Der QR-Code öffnet diese Einrichtungsseite für '+esc(device.name)+'.</div>';
+      '<div class="invite-note">Der QR-Code und der Link öffnen die Einrichtungsseite für '+esc(device.name)+'. Dort sieht die Zielperson dann die Buttons „Traccar öffnen“, „URL kopieren“ und „Kennung kopieren“.</div>';
 
     container.appendChild(card);
 

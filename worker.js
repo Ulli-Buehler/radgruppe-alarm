@@ -152,16 +152,16 @@ async function checkAlerts() {
     const messages = [];
 
     if (!leaderId || !leader) {
-      messages.push('Kein Leiter gewählt');
+      messages.push('Kein Tourguide gewählt');
     } else if (!leaderPos) {
-      messages.push('Leiter hat kein Signal');
+      messages.push('Tourguide hat kein Signal');
     } else {
       const leaderAge = ageSeconds(
         leaderPos.serverTime || leaderPos.deviceTime || leaderPos.fixTime
       );
 
       if (leaderAge > SIGNAL_TIMEOUT_SECONDS) {
-        messages.push('Leiter nicht live');
+        messages.push('Tourguide nicht live');
       }
     }
 
@@ -282,4 +282,3 @@ console.log(`Signal-Timeout: ${SIGNAL_TIMEOUT_SECONDS} s`);
 startHealthServer();
 checkAlerts();
 setInterval(checkAlerts, CHECK_INTERVAL_MS);
-

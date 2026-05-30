@@ -381,7 +381,7 @@
     </div>
     <div class="setup-step">
       <div class="setup-title">Aktive Fahrer</div>
-      <div class="setup-desc">Nur aktive Fahrer lösen Alarm und Push aus. Der gewählte Tourguide wird immer überwacht.</div>
+      <div class="setup-desc">Nur aktive Fahrer lösen Alarm und Push aus. Der gewählte Tourguide wird immer überwacht. Bei Pausen sind alte Positionen bis zu 2 Stunden erlaubt, solange sie zuletzt in der Nähe des Tourguides waren.</div>
     </div>
     <div id="member-list"><div style="text-align:center;color:var(--muted);font-size:14px;padding:20px">Zuerst START im Alarm-Tab drücken</div></div>
   </div>
@@ -439,6 +439,8 @@ let lastPopupKey='';
 let dismissedPopupKey='';
 
 const SIGNAL_TIMEOUT_SECONDS=180;
+const PAUSE_TIMEOUT_SECONDS=7200;
+const GUIDE_MOVING_SPEED_KMH=4;
 const ACTIVE_DEVICES_KEY='rg-active-devices';
 const ACTIVE_DEVICES_INIT_KEY='rg-active-devices-initialized';
 const PUBLIC_VAPID_KEY='BNVgo1Sw3AavabOJg1mPh6zBaHEZa3_AThKmH0WSgFHiXa_mkMTvnnwJIm9G1LPBBtvgy41X8ZSryDAa9s75lpc';
@@ -593,6 +595,28 @@ function getLiveAge(position){
   return Math.round((Date.now()-new Date(liveTime))/1000);
 }
 
+
+function speedKmh(position){
+  if(!position || position.speed==null)return 0;
+  const value=Number(position.speed);
+  if(!Number.isFinite(value))return 0;
+  return value*1.852;
+}
+
+function isPositionFresh(position){
+  if(!position)return false;
+  return getLiveAge(position)<=SIGNAL_TIMEOUT_SECONDS;
+}
+
+function isPositionWithinPauseLimit(position){
+  if(!position)return false;
+  return getLiveAge(position)<=PAUSE_TIMEOUT_SECONDS;
+}
+
+function isMoving(position){
+  return speedKmh(position)>GUIDE_MOVING_SPEED_KMH;
+}
+
 async function fetchPositions(){
   const cfg=getConfig();
 
@@ -614,6 +638,9 @@ async function fetchPositions(){
     let anyAlert=false;
     const messages=[];
 
+    let guideIsPaused=false;
+    let guideAge=999999;
+
     if(!cfg.leader){
       anyAlert=true;
       messages.push('Kein Tourguide gewählt');
@@ -621,8 +648,15 @@ async function fetchPositions(){
       anyAlert=true;
       messages.push('Tourguide hat kein Signal');
     }else{
-      const leaderAge=getLiveAge(leaderPos);
-      if(leaderAge>SIGNAL_TIMEOUT_SECONDS){
+      guideAge=getLiveAge(leaderPos);
+      guideIsPaused=!isMoving(leaderPos);
+
+      if(guideAge>SIGNAL_TIMEOUT_SECONDS && guideAge<=PAUSE_TIMEOUT_SECONDS && guideIsPaused){
+        document.getElementById('status-text').textContent='Pause';
+      }else if(guideAge>PAUSE_TIMEOUT_SECONDS){
+        anyAlert=true;
+        messages.push('Tourguide nicht live');
+      }else if(guideAge>SIGNAL_TIMEOUT_SECONDS && !guideIsPaused){
         anyAlert=true;
         messages.push('Tourguide nicht live');
       }
@@ -656,24 +690,39 @@ async function fetchPositions(){
       if(pos && leaderPos){
         const dist=Math.round(haversine(leaderPos.latitude,leaderPos.longitude,pos.latitude,pos.longitude));
         const age=getLiveAge(pos);
+        const riderPaused=!isMoving(pos);
+        const lastKnownNear=dist<=cfg.threshold;
+
         distText=dist+' m';
 
-        if(age>SIGNAL_TIMEOUT_SECONDS){
+        if(age<=SIGNAL_TIMEOUT_SECONDS){
+          if(dist>cfg.threshold){
+            distClass='alert';
+            cardClass='alert';
+            infoText='zu weit weg · '+formatAge(age);
+            anyAlert=true;
+            messages.push(device.name+' zu weit weg');
+          }else{
+            distClass='ok';
+            cardClass='ok';
+            infoText=(riderPaused?'Steht · ':'Live · ')+formatAge(age);
+          }
+        }else if(age<=PAUSE_TIMEOUT_SECONDS && lastKnownNear && (guideIsPaused || riderPaused)){
+          distClass='ok';
+          cardClass='ok';
+          infoText='Pause / steht · letzte Position '+formatAge(age);
+        }else if(age>PAUSE_TIMEOUT_SECONDS){
           distClass='alert';
           cardClass='alert';
           infoText='Signal weg: '+formatAge(age);
           anyAlert=true;
           messages.push(device.name+' nicht live');
-        }else if(dist>cfg.threshold){
+        }else{
           distClass='alert';
           cardClass='alert';
-          infoText='zu weit weg · '+formatAge(age);
+          infoText='Signal weg: '+formatAge(age);
           anyAlert=true;
-          messages.push(device.name+' zu weit weg');
-        }else{
-          distClass='ok';
-          cardClass='ok';
-          infoText='Live · '+formatAge(age);
+          messages.push(device.name+' nicht live');
         }
       }else if(!leaderPos){
         infoText='Tourguide hat kein Signal';

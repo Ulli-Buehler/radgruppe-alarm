@@ -338,7 +338,7 @@
     <div class="config-row"><label>Server</label><input id="server-url" type="text" placeholder="https://traccar-xxx.up.railway.app"></div>
     <div class="config-row"><label>Email</label><input id="email" type="email" placeholder="deine@email.com"></div>
     <div class="config-row"><label>Passwort</label><input id="password" type="password" placeholder="••••••••"></div>
-    <div class="config-row"><label>Leiter</label><select id="leader-select"><option value="">– nach Start wählen –</option></select></div>
+    <div class="config-row"><label>Tourguide</label><select id="leader-select"><option value="">– nach Start wählen –</option></select></div>
     <div class="config-row">
       <label>Alarm ab</label>
       <input id="threshold" type="number" value="200" min="1" max="2000" style="max-width:100px">
@@ -381,7 +381,7 @@
     </div>
     <div class="setup-step">
       <div class="setup-title">Aktive Fahrer</div>
-      <div class="setup-desc">Nur aktive Fahrer lösen Alarm und Push aus. Der gewählte Leiter wird immer überwacht.</div>
+      <div class="setup-desc">Nur aktive Fahrer lösen Alarm und Push aus. Der gewählte Tourguide wird immer überwacht.</div>
     </div>
     <div id="member-list"><div style="text-align:center;color:var(--muted);font-size:14px;padding:20px">Zuerst START im Alarm-Tab drücken</div></div>
   </div>
@@ -426,7 +426,7 @@
     <div class="setup-step">
       <div class="setup-num">6</div>
       <div class="setup-title">Push aktivieren</div>
-      <div class="setup-desc">In der installierten App START drücken, Leiter wählen, aktive Fahrer markieren und dann „PUSH AKTIVIEREN“ drücken.</div>
+      <div class="setup-desc">In der installierten App START drücken, Tourguide wählen, aktive Fahrer markieren und dann „PUSH AKTIVIEREN“ drücken.</div>
     </div>
   </div>
 </div>
@@ -577,7 +577,7 @@ async function loadDevices(){
 
   const select=document.getElementById('leader-select');
   const previous=select.value;
-  select.innerHTML='<option value="">– Leiter wählen –</option>';
+  select.innerHTML='<option value="">– Tourguide wählen –</option>';
 
   devices.forEach(device=>{
     const option=document.createElement('option');
@@ -616,15 +616,15 @@ async function fetchPositions(){
 
     if(!cfg.leader){
       anyAlert=true;
-      messages.push('Kein Leiter gewählt');
+      messages.push('Kein Tourguide gewählt');
     }else if(!leaderPos){
       anyAlert=true;
-      messages.push('Leiter hat kein Signal');
+      messages.push('Tourguide hat kein Signal');
     }else{
       const leaderAge=getLiveAge(leaderPos);
       if(leaderAge>SIGNAL_TIMEOUT_SECONDS){
         anyAlert=true;
-        messages.push('Leiter nicht live');
+        messages.push('Tourguide nicht live');
       }
     }
 
@@ -676,7 +676,7 @@ async function fetchPositions(){
           infoText='Live · '+formatAge(age);
         }
       }else if(!leaderPos){
-        infoText='Leiter hat kein Signal';
+        infoText='Tourguide hat kein Signal';
         distText='?';
       }
 
@@ -822,7 +822,7 @@ function renderMemberList(){
 
     const safeName=esc(String(device.name)).replace(/&#39;/g,'');
     card.innerHTML=
-      '<div><div class="member-list-name">'+esc(device.name)+(isLeader?' <span style="font-size:14px;color:var(--green)">LEITER</span>':'')+'</div><div class="member-list-id">Kennung: '+esc(device.uniqueId)+'</div></div>'+
+      '<div><div class="member-list-name">'+esc(device.name)+(isLeader?' <span style="font-size:14px;color:var(--green)">TOURGUIDE</span>':'')+'</div><div class="member-list-id">Kennung: '+esc(device.uniqueId)+'</div></div>'+
       '<div class="member-list-actions">'+
         '<label class="active-toggle" style="min-width:auto;text-transform:none;letter-spacing:1px;color:'+(active?'var(--green)':'var(--muted)')+'">'+
           '<input type="checkbox" '+(active?'checked':'')+' '+(isLeader?'disabled':'')+' onchange="setDeviceActive('+device.id+',this.checked)"> Aktiv'+
@@ -900,7 +900,7 @@ function logout(){
 }
 
 function showLoginPage(){
-  document.body.innerHTML='<div style="background:#111418;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px"><div style="font-family:Bebas Neue,sans-serif;font-size:38px;color:#5dff7a;letter-spacing:3px;margin-bottom:8px">🚴 RADGRUPPE</div><div style="color:#a8b2bf;font-size:13px;margin-bottom:32px">Gruppenleiter Login</div><form id="login-form" onsubmit="doLogin(event)" autocomplete="on" style="width:100%;max-width:360px;display:flex;flex-direction:column;gap:14px"><input name="url" id="login-url" type="url" placeholder="Server-URL" autocomplete="url" style="background:#0f1319;border:1px solid #3b4452;color:#f5f7fa;font-family:monospace;font-size:14px;padding:12px 16px;border-radius:6px;width:100%"><input name="username" id="login-email" type="email" placeholder="Email" autocomplete="username" style="background:#0f1319;border:1px solid #3b4452;color:#f5f7fa;font-family:monospace;font-size:14px;padding:12px 16px;border-radius:6px;width:100%"><input name="password" id="login-password" type="password" placeholder="Passwort" autocomplete="current-password" style="background:#0f1319;border:1px solid #3b4452;color:#f5f7fa;font-family:monospace;font-size:14px;padding:12px 16px;border-radius:6px;width:100%"><div id="login-error" style="color:#ff4d4d;font-size:13px;display:none">Verbindung fehlgeschlagen. Bitte prüfe deine Daten.</div><button type="submit" style="background:#5dff7a;color:#071007;font-family:Bebas Neue,sans-serif;font-size:20px;letter-spacing:2px;padding:12px;border:none;border-radius:6px;cursor:pointer">ANMELDEN</button></form></div>';
+  document.body.innerHTML='<div style="background:#111418;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px"><div style="font-family:Bebas Neue,sans-serif;font-size:38px;color:#5dff7a;letter-spacing:3px;margin-bottom:8px">🚴 RADGRUPPE</div><div style="color:#a8b2bf;font-size:13px;margin-bottom:32px">Gruppentourguide Login</div><form id="login-form" onsubmit="doLogin(event)" autocomplete="on" style="width:100%;max-width:360px;display:flex;flex-direction:column;gap:14px"><input name="url" id="login-url" type="url" placeholder="Server-URL" autocomplete="url" style="background:#0f1319;border:1px solid #3b4452;color:#f5f7fa;font-family:monospace;font-size:14px;padding:12px 16px;border-radius:6px;width:100%"><input name="username" id="login-email" type="email" placeholder="Email" autocomplete="username" style="background:#0f1319;border:1px solid #3b4452;color:#f5f7fa;font-family:monospace;font-size:14px;padding:12px 16px;border-radius:6px;width:100%"><input name="password" id="login-password" type="password" placeholder="Passwort" autocomplete="current-password" style="background:#0f1319;border:1px solid #3b4452;color:#f5f7fa;font-family:monospace;font-size:14px;padding:12px 16px;border-radius:6px;width:100%"><div id="login-error" style="color:#ff4d4d;font-size:13px;display:none">Verbindung fehlgeschlagen. Bitte prüfe deine Daten.</div><button type="submit" style="background:#5dff7a;color:#071007;font-family:Bebas Neue,sans-serif;font-size:20px;letter-spacing:2px;padding:12px;border:none;border-radius:6px;cursor:pointer">ANMELDEN</button></form></div>';
 
   const saved=localStorage.getItem('rg-config');
   if(saved){
@@ -982,7 +982,7 @@ async function enablePush(){
     }
 
     if(!cfg.leader){
-      alert('Bitte zuerst START drücken und den Leiter auswählen.');
+      alert('Bitte zuerst START drücken und den Tourguide auswählen.');
       return;
     }
 

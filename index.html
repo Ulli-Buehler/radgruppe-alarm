@@ -880,12 +880,28 @@ function copyTraccarSettings(server,kennung,button){
   });
 }
 
-function renderInvites(){
+async function renderInvites(){
   const cfg=getConfig();
   const container=document.getElementById('invite-content');
 
   if(!devices.length){
-    container.innerHTML='<div style="text-align:center;color:var(--muted);font-size:14px;padding:40px 20px">Zuerst auf "Alarm" Tab gehen und START drücken</div>';
+    if(!cfg.url || !cfg.email || !cfg.password){
+      container.innerHTML='<div style="text-align:center;color:var(--muted);font-size:14px;padding:40px 20px">Bitte zuerst anmelden. Danach kann die Einladung automatisch geladen werden.</div>';
+      return;
+    }
+
+    container.innerHTML='<div style="text-align:center;color:var(--muted);font-size:14px;padding:40px 20px">Mitglieder werden geladen...</div>';
+
+    try{
+      await loadDevices();
+    }catch(error){
+      container.innerHTML='<div style="text-align:center;color:var(--red);font-size:14px;padding:40px 20px">Mitglieder konnten nicht geladen werden.<br><br>'+esc(error.message)+'<br><br>Prüfe Server, Email und Passwort im Alarm-Tab.</div>';
+      return;
+    }
+  }
+
+  if(!devices.length){
+    container.innerHTML='<div style="text-align:center;color:var(--muted);font-size:14px;padding:40px 20px">Keine Mitglieder gefunden.</div>';
     return;
   }
 

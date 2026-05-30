@@ -898,17 +898,6 @@ function openTraccarStore(){
   window.location.href=getTraccarStoreUrl();
 }
 
-function makeTraccarConfigUrl(server,kennung){
-  const params=new URLSearchParams();
-  params.set('url',server);
-  params.set('id',kennung);
-  params.set('accuracy','high');
-  params.set('distance','0');
-  params.set('interval','10');
-  params.set('buffer','true');
-  params.set('status','true');
-  return 'org.traccar.client://setup?'+params.toString();
-}
 
 function makeTraccarQuickText(server,kennung){
   return [
@@ -931,10 +920,6 @@ function makeTraccarQuickText(server,kennung){
   ].join('\n');
 }
 
-function openTraccarConfig(server,kennung){
-  const url=makeTraccarConfigUrl(server,kennung);
-  window.location.href=url;
-}
 
 function copyTraccarSettings(server,kennung,button){
   const text=makeTraccarQuickText(server,kennung);
@@ -983,17 +968,27 @@ async function renderInvites(){
       '<div class="invite-name">'+esc(device.name)+'</div>'+
       '<div class="invite-info">SCHNELL-EINRICHTUNG</div>'+
       '<div class="invite-buttons">'+
-        '<button class="btn-sm solid" onclick="shareInvite(\''+esc(device.name)+'\',\''+esc(joinUrl)+'\')">🔗 Einladung teilen</button>'+
-        '<button class="btn-sm solid" onclick="openTraccarStore()">📲 Traccar App laden</button>'+
-        '<button class="btn-sm" onclick="copyTraccarSettings(\''+esc(server)+'\',\''+esc(kennung)+'\',this)">📋 Traccar-Einstellungen kopieren</button>'+
+        '<button class="btn-sm solid" onclick="openTraccarApp()">📲 Traccar öffnen</button>'+
+        '<button class="btn-sm" onclick="copyText(\''+esc(server)+'\',this)">URL kopieren</button>'+
+        '<button class="btn-sm" onclick="copyText(\''+esc(kennung)+'\',this)">Kennung kopieren</button>'+
       '</div>'+
+      '<div class="invite-note">Einstellungen im Traccar Client:<br><br>'+
+        '1. Traccar Client öffnen.<br>'+
+        '2. Server-URL einfügen.<br>'+
+        '3. Kennung / Device ID einfügen.<br>'+
+        '4. Standort auf <strong style="color:var(--text)">Immer</strong> erlauben.<br>'+
+        '5. Genauigkeit auf <strong style="color:var(--text)">Höchste/Hoch</strong> stellen.<br>'+
+        '6. Intervall auf <strong style="color:var(--text)">10 Sekunden</strong> stellen.<br>'+
+        '7. Distanz auf <strong style="color:var(--text)">0 Meter</strong> stellen.<br>'+
+        '8. Offline-Puffer einschalten, falls vorhanden.<br>'+
+        '9. Tracking einschalten.</div>'+
       '<div class="invite-info">SERVER-URL</div>'+
       '<div class="invite-value">'+esc(server)+'</div>'+
       '<div class="invite-info">KENNUNG / DEVICE ID</div>'+
       '<div class="invite-value">'+esc(kennung)+'</div>'+
       '<div class="invite-info">QR-CODE</div>'+
       '<div class="qr-wrap" id="qr-'+device.id+'"></div>'+
-      '<div class="invite-note">📱 QR-Code öffnen → Einrichtungsseite erscheint → Traccar App laden → „Einstellungen kopieren“ antippen und in Traccar Client einfügen.<br><br>Empfohlen: Standort „Immer“, Genauigkeit „Höchste/Hoch“, Intervall 10 s, Distanz 0 m, Tracking einschalten.</div>';
+      '<div class="invite-note">Der QR-Code öffnet diese Einrichtungsseite für '+esc(device.name)+'.</div>';
 
     container.appendChild(card);
 
@@ -1239,15 +1234,26 @@ window.onload=()=>{
         '<div style="color:#a8b2bf;font-size:13px">Einladung für</div>'+
         '<div style="font-size:28px;font-weight:900">'+esc(name)+'</div>'+
         '<div style="background:#1b2028;border:1px solid #3b4452;border-radius:8px;padding:16px">'+
-          '<div style="font-size:20px;font-weight:900;color:#5dff7a;margin-bottom:10px">1. Traccar Client laden</div>'+
-          '<button onclick="openTraccarStore()" style="width:100%;background:#5dff7a;color:#071007;border:none;padding:14px;border-radius:6px;font-weight:900;margin-bottom:14px">📲 TRACCAR APP LADEN</button>'+
-          '<div style="font-size:20px;font-weight:900;color:#5dff7a;margin-bottom:10px">2. Einstellungen übernehmen</div>'+
-          '<button onclick="copyTraccarSettings(\''+esc(server)+'\',\''+esc(kennung)+'\',this)" style="width:100%;background:#263241;color:#f5f7fa;border:1px solid #5dff7a;padding:14px;border-radius:6px;font-weight:900;margin-bottom:14px">📋 TRACCAR-EINSTELLUNGEN KOPIEREN</button>'+
+          '<div style="font-size:20px;font-weight:900;color:#5dff7a;margin-bottom:12px">Schnell-Einrichtung</div>'+
+          '<button onclick="openTraccarApp()" style="width:100%;background:#5dff7a;color:#071007;border:none;padding:14px;border-radius:6px;font-weight:900;margin-bottom:10px">📲 1. TRACCAR ÖFFNEN</button>'+
+          '<button onclick="copyText(\''+esc(server)+'\',this)" style="width:100%;background:#263241;color:#f5f7fa;border:1px solid #5dff7a;padding:13px;border-radius:6px;font-weight:900;margin-bottom:10px">2. URL KOPIEREN</button>'+
+          '<button onclick="copyText(\''+esc(kennung)+'\',this)" style="width:100%;background:#263241;color:#f5f7fa;border:1px solid #5dff7a;padding:13px;border-radius:6px;font-weight:900;margin-bottom:16px">3. KENNUNG KOPIEREN</button>'+
+          '<div style="color:#a8b2bf;font-size:14px;line-height:1.55;margin-bottom:14px">'+
+            '<strong style="color:#f5f7fa">Einstellungen im Traccar Client:</strong><br><br>'+
+            '1. Traccar öffnen.<br>'+
+            '2. Server-URL einfügen.<br>'+
+            '3. Kennung / Device ID einfügen.<br>'+
+            '4. Standort auf <strong style="color:#f5f7fa">Immer</strong> erlauben.<br>'+
+            '5. Genauigkeit auf <strong style="color:#f5f7fa">Höchste/Hoch</strong> stellen.<br>'+
+            '6. Intervall auf <strong style="color:#f5f7fa">10 Sekunden</strong> stellen.<br>'+
+            '7. Distanz auf <strong style="color:#f5f7fa">0 Meter</strong> stellen.<br>'+
+            '8. Offline-Puffer einschalten, falls vorhanden.<br>'+
+            '9. Tracking einschalten.'+
+          '</div>'+
           '<div style="font-size:12px;color:#a8b2bf;text-transform:uppercase;margin-bottom:8px">Server-URL</div>'+
           '<div style="background:#0f1319;padding:10px;border-radius:4px;font-size:13px;word-break:break-all;margin-bottom:12px">'+esc(server)+'</div>'+
           '<div style="font-size:12px;color:#a8b2bf;margin-top:12px">Kennung / Device ID</div>'+
           '<div style="background:#0f1319;padding:10px;border-radius:4px;font-size:22px;font-weight:900;letter-spacing:3px;margin-bottom:12px">'+esc(kennung)+'</div>'+
-          '<div style="color:#a8b2bf;font-size:14px;line-height:1.5">Nach dem Laden Traccar Client öffnen und die kopierten Werte einfügen. Danach: Standort auf „Immer“ erlauben, Tracking einschalten. Empfohlen: Genauigkeit Höchste/Hoch, Intervall 10 Sekunden, Distanz 0 Meter.</div>'+
         '</div>'+
       '</div>';
     return;
@@ -1281,3 +1287,19 @@ window.onload=()=>{
 </script>
 </body>
 </html>
+
+
+function getTraccarStoreUrl(){
+  const ua=navigator.userAgent||'';
+
+  if(/android/i.test(ua)){
+    return 'https://play.google.com/store/apps/details?id=org.traccar.client';
+  }
+
+  return 'https://apps.apple.com/app/traccar-client/id843156974';
+}
+
+function openTraccarApp(){
+  window.location.href=getTraccarStoreUrl();
+}
+

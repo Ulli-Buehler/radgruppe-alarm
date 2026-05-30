@@ -254,9 +254,13 @@
   .btn-sm.danger{border-color:var(--red);color:var(--red)}
   .qr-wrap{background:#fff;display:inline-block;padding:10px;border-radius:8px;margin-top:8px}
   .invite-note,.setup-desc{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.6}
-  .member-list-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+  .member-list-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .member-list-card.inactive{opacity:.58;background:#151a21}
   .member-list-name{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text)}
   .member-list-id{font-size:12px;color:var(--muted)}
+  .member-list-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  .active-toggle{display:flex;align-items:center;gap:6px;color:var(--green);font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;white-space:nowrap}
+  .active-toggle input{width:18px;height:18px;min-width:18px;flex:none;accent-color:#5dff7a}
   .setup-num{font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--green);line-height:1}
   a{color:var(--green)}
 
@@ -371,6 +375,10 @@
       <button class="btn-sm solid" onclick="addMember()" style="font-size:16px;padding:10px">HINZUFÜGEN</button>
       <div id="add-status" style="font-size:13px;color:var(--muted)"></div>
     </div>
+    <div class="setup-step">
+      <div class="setup-title">Aktive Fahrer</div>
+      <div class="setup-desc">Nur aktive Fahrer lösen Alarm und Push aus. Der gewählte Leiter wird immer überwacht.</div>
+    </div>
     <div id="member-list"><div style="text-align:center;color:var(--muted);font-size:14px;padding:20px">Zuerst START im Alarm-Tab drücken</div></div>
   </div>
 </div>
@@ -414,7 +422,7 @@
     <div class="setup-step">
       <div class="setup-num">6</div>
       <div class="setup-title">Push aktivieren</div>
-      <div class="setup-desc">In der installierten App START drücken, Leiter wählen und dann „PUSH AKTIVIEREN“ drücken.</div>
+      <div class="setup-desc">In der installierten App START drücken, Leiter wählen, aktive Fahrer markieren und dann „PUSH AKTIVIEREN“ drücken.</div>
     </div>
   </div>
 </div>
@@ -427,6 +435,8 @@ let lastPopupKey='';
 let dismissedPopupKey='';
 
 const SIGNAL_TIMEOUT_SECONDS=180;
+const ACTIVE_DEVICES_KEY='rg-active-devices';
+const ACTIVE_DEVICES_INIT_KEY='rg-active-devices-initialized';
 const PUBLIC_VAPID_KEY='BNVgo1Sw3AavabOJg1mPh6zBaHEZa3_AThKmH0WSgFHiXa_mkMTvnnwJIm9G1LPBBtvgy41X8ZSryDAa9s75lpc';
 
 function esc(v){
@@ -476,8 +486,67 @@ function getConfig(){
     email:document.getElementById('email').value.trim(),
     password:document.getElementById('password').value,
     threshold:parseInt(document.getElementById('threshold').value)||200,
-    leader:document.getElementById('leader-select').value
+    leader:document.getElementById('leader-select').value,
+    activeDeviceIds:getActiveDeviceIds()
   };
+}
+
+function readActiveDeviceIds(){
+  try{
+    const raw=localStorage.getItem(ACTIVE_DEVICES_KEY);
+    const parsed=raw?JSON.parse(raw):[];
+    return Array.isArray(parsed)?parsed.map(String).filter(Boolean):[];
+  }catch(error){
+    return [];
+  }
+}
+
+function writeActiveDeviceIds(ids){
+  const clean=[...new Set((ids||[]).map(String).filter(Boolean))];
+  localStorage.setItem(ACTIVE_DEVICES_KEY,JSON.stringify(clean));
+  localStorage.setItem(ACTIVE_DEVICES_INIT_KEY,'1');
+  return clean;
+}
+
+function initializeActiveDevicesIfNeeded(){
+  if(localStorage.getItem(ACTIVE_DEVICES_INIT_KEY)==='1')return;
+  if(!devices.length)return;
+
+  writeActiveDeviceIds(devices.map(device=>device.id));
+}
+
+function getActiveDeviceIds(){
+  initializeActiveDevicesIfNeeded();
+  return readActiveDeviceIds();
+}
+
+function isDeviceActive(id){
+  const active=getActiveDeviceIds();
+  return active.includes(String(id));
+}
+
+function setDeviceActive(id,active){
+  const idText=String(id);
+  const ids=getActiveDeviceIds();
+
+  let next;
+  if(active){
+    next=[...new Set([...ids,idText])];
+  }else{
+    next=ids.filter(value=>value!==idText);
+  }
+
+  writeActiveDeviceIds(next);
+  renderMemberList();
+
+  if(interval){
+    fetchPositions();
+  }
+
+  const status=document.getElementById('push-status');
+  if(status){
+    status.textContent='Auswahl geändert – Push neu aktivieren';
+  }
 }
 
 async function apiCall(path,method='GET',body=null){
@@ -500,6 +569,7 @@ async function apiCall(path,method='GET',body=null){
 async function loadDevices(){
   devices=await apiCall('/api/devices');
   devices.sort((a,b)=>String(a.name).localeCompare(String(b.name),'de'));
+  initializeActiveDevicesIfNeeded();
 
   const select=document.getElementById('leader-select');
   const previous=select.value;
@@ -554,14 +624,30 @@ async function fetchPositions(){
       }
     }
 
-    devices.forEach(device=>{
-      if(String(device.id)===cfg.leader)return;
+    const activeIds=new Set(getActiveDeviceIds().map(String));
+    const visibleDevices=devices.filter(device=>{
+      if(String(device.id)===cfg.leader)return false;
+      return activeIds.has(String(device.id));
+    });
 
+    if(!visibleDevices.length){
+      const empty=document.createElement('div');
+      empty.id='empty-state';
+      empty.textContent='Keine aktiven Fahrer ausgewählt. Im Tab „Mitglieder“ Fahrer aktivieren.';
+      container.appendChild(empty);
+    }
+
+    visibleDevices.forEach(device=>{
       const pos=posMap[device.id];
       let distText='–';
       let distClass='offline';
       let cardClass='offline';
       let infoText='Kein Signal';
+
+      if(!pos){
+        anyAlert=true;
+        messages.push(device.name+' kein Signal');
+      }
 
       if(pos && leaderPos){
         const dist=Math.round(haversine(leaderPos.latitude,leaderPos.longitude,pos.latitude,pos.longitude));
@@ -684,8 +770,9 @@ async function addMember(){
   status.textContent='Wird angelegt...';
 
   try{
-    await apiCall('/api/devices','POST',{name:name,uniqueId:kennung});
+    const created=await apiCall('/api/devices','POST',{name:name,uniqueId:kennung});
     await loadDevices();
+    if(created && created.id)setDeviceActive(created.id,true);
     document.getElementById('new-name').value='';
     status.textContent='✅ '+name+' wurde angelegt!';
     renderMemberList();
@@ -701,6 +788,7 @@ async function deleteMember(id,name){
 
   try{
     await apiCall('/api/devices/'+id,'DELETE');
+    writeActiveDeviceIds(getActiveDeviceIds().filter(value=>value!==String(id)));
     await loadDevices();
     renderMemberList();
   }catch(error){
@@ -716,14 +804,27 @@ function renderMemberList(){
     return;
   }
 
+  const cfg=getConfig();
+  const activeIds=new Set(getActiveDeviceIds().map(String));
+
   container.innerHTML='<div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Alle Mitglieder</div>';
 
   devices.forEach(device=>{
+    const idText=String(device.id);
+    const isLeader=idText===String(cfg.leader);
+    const active=isLeader || activeIds.has(idText);
     const card=document.createElement('div');
-    card.className='member-list-card';
+    card.className='member-list-card '+(active?'':'inactive');
 
     const safeName=esc(String(device.name)).replace(/&#39;/g,'');
-    card.innerHTML='<div><div class="member-list-name">'+esc(device.name)+'</div><div class="member-list-id">Kennung: '+esc(device.uniqueId)+'</div></div><button class="btn-sm danger" onclick="deleteMember('+device.id+', \''+safeName+'\')">Löschen</button>';
+    card.innerHTML=
+      '<div><div class="member-list-name">'+esc(device.name)+(isLeader?' <span style="font-size:14px;color:var(--green)">LEITER</span>':'')+'</div><div class="member-list-id">Kennung: '+esc(device.uniqueId)+'</div></div>'+
+      '<div class="member-list-actions">'+
+        '<label class="active-toggle" style="min-width:auto;text-transform:none;letter-spacing:1px;color:'+(active?'var(--green)':'var(--muted)')+'">'+
+          '<input type="checkbox" '+(active?'checked':'')+' '+(isLeader?'disabled':'')+' onchange="setDeviceActive('+device.id+',this.checked)"> Aktiv'+
+        '</label>'+
+        '<button class="btn-sm danger" onclick="deleteMember('+device.id+', \''+safeName+'\')">Löschen</button>'+
+      '</div>';
     container.appendChild(card);
   });
 }
@@ -911,7 +1012,8 @@ async function enablePush(){
           email:cfg.email,
           password:cfg.password,
           threshold:cfg.threshold,
-          leader:cfg.leader
+          leader:cfg.leader,
+          activeDeviceIds:cfg.activeDeviceIds
         }
       })
     });

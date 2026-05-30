@@ -80,6 +80,28 @@ async function sendPush(subscription, messages) {
   );
 }
 
+function getActiveIdSet(config) {
+  if (!Array.isArray(config.activeDeviceIds) || config.activeDeviceIds.length === 0) {
+    return null;
+  }
+
+  return new Set(config.activeDeviceIds.map(value => String(value)).filter(Boolean));
+}
+
+function shouldMonitorDevice(device, leaderId, activeIdSet) {
+  const idText = String(device.id);
+
+  if (Number(device.id) === leaderId) {
+    return true;
+  }
+
+  if (!activeIdSet) {
+    return true;
+  }
+
+  return activeIdSet.has(idText);
+}
+
 async function checkAlerts() {
   if (isChecking) return;
 
@@ -123,6 +145,7 @@ async function checkAlerts() {
     }
 
     const leaderId = Number(config.leader);
+    const activeIdSet = getActiveIdSet(config);
     const leader = devices.find(device => Number(device.id) === leaderId);
     const leaderPos = posMap[leaderId];
 
@@ -145,6 +168,7 @@ async function checkAlerts() {
     if (leaderPos) {
       for (const device of devices) {
         if (Number(device.id) === leaderId) continue;
+        if (!shouldMonitorDevice(device, leaderId, activeIdSet)) continue;
 
         const pos = posMap[device.id];
 
@@ -186,7 +210,8 @@ async function checkAlerts() {
       lastResult = {
         ok: true,
         pushed: true,
-        messages
+        messages,
+        activeDeviceIds: config.activeDeviceIds || []
       };
 
       console.log('[PUSH]', messages.join(' | '));
@@ -204,7 +229,8 @@ async function checkAlerts() {
     lastResult = {
       ok: true,
       pushed: false,
-      messages
+      messages,
+      activeDeviceIds: config.activeDeviceIds || []
     };
   } catch (error) {
     lastResult = {

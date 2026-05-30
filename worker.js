@@ -330,3 +330,4 @@ console.log(`Tourguide bewegt ab: ${GUIDE_MOVING_SPEED_KMH} km/h`);
 startHealthServer();
 checkAlerts();
 setInterval(checkAlerts, CHECK_INTERVAL_MS);
+

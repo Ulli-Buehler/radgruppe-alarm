@@ -899,13 +899,13 @@ function getTraccarStoreUrl(){
 }
 
 function openTraccarStore(){
-  window.location.href=getTraccarStoreUrl();
+  window.open(getTraccarStoreUrl(),'_blank','noopener,noreferrer');
 }
 
 
 
 function openTraccarApp(){
-  window.location.href=getTraccarStoreUrl();
+  window.open(getTraccarStoreUrl(),'_blank','noopener,noreferrer');
 }
 
 function makeTraccarQuickText(server,kennung){
@@ -1228,12 +1228,12 @@ window.onload=()=>{
         '<div style="font-size:28px;font-weight:900">'+esc(name)+'</div>'+
         '<div style="background:#1b2028;border:1px solid #3b4452;border-radius:8px;padding:16px">'+
           '<div style="font-size:20px;font-weight:900;color:#5dff7a;margin-bottom:12px">Schnell-Einrichtung</div>'+
-          '<button onclick="openTraccarApp()" style="width:100%;background:#5dff7a;color:#071007;border:none;padding:14px;border-radius:6px;font-weight:900;margin-bottom:10px">📲 1. TRACCAR ÖFFNEN</button>'+
+          '<button onclick="openTraccarApp()" style="width:100%;background:#5dff7a;color:#071007;border:none;padding:14px;border-radius:6px;font-weight:900;margin-bottom:10px">📲 1. TRACCAR INSTALLIEREN / ÖFFNEN</button>'+
           '<button onclick="copyText(\''+esc(server)+'\',this)" style="width:100%;background:#263241;color:#f5f7fa;border:1px solid #5dff7a;padding:13px;border-radius:6px;font-weight:900;margin-bottom:10px">2. URL KOPIEREN</button>'+
           '<button onclick="copyText(\''+esc(kennung)+'\',this)" style="width:100%;background:#263241;color:#f5f7fa;border:1px solid #5dff7a;padding:13px;border-radius:6px;font-weight:900;margin-bottom:16px">3. KENNUNG KOPIEREN</button>'+
           '<div style="color:#a8b2bf;font-size:14px;line-height:1.55;margin-bottom:14px">'+
             '<strong style="color:#f5f7fa">Einstellungen im Traccar Client:</strong><br><br>'+
-            '1. Traccar öffnen.<br>'+
+            '1. Traccar installieren/öffnen. Danach zu dieser Seite zurückwechseln.<br>'+
             '2. Server-URL einfügen.<br>'+
             '3. Kennung / Device ID einfügen.<br>'+
             '4. Standort auf <strong style="color:#f5f7fa">Immer</strong> erlauben.<br>'+

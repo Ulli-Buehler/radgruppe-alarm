@@ -16,6 +16,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'config_missing' });
     }
 
+    const activeDeviceIds = Array.isArray(config.activeDeviceIds)
+      ? [...new Set(config.activeDeviceIds.map(value => String(value)).filter(Boolean))]
+      : [];
+
     const data = {
       subscription,
       config: {
@@ -23,7 +27,8 @@ export default async function handler(req, res) {
         email: String(config.email),
         password: String(config.password),
         threshold: Number(config.threshold || 200),
-        leader: String(config.leader || '')
+        leader: String(config.leader || ''),
+        activeDeviceIds
       },
       lastAlertKey: '',
       lastAlertAt: 0,
@@ -34,9 +39,12 @@ export default async function handler(req, res) {
     await kv.set('radgruppe:main', data);
 
     return res.status(200).json({
-      ok: true
+      ok: true,
+      activeDeviceIds
     });
   } catch (error) {
+    console.error('Push subscribe fehlgeschlagen:', error);
+
     return res.status(500).json({
       error: error.message
     });

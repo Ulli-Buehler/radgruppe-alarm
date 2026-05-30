@@ -338,7 +338,7 @@
 
 <div class="tab-content active" id="tab-alarm">
   <div id="config">
-    <div class="config-row"><label>Server</label><input id="server-url" type="text" placeholder="https://traccar-xxx.up.railway.app"></div>
+    <div class="config-row"><label>Server</label><input id="server-url" type="text" placeholder="https://traccar-production-c93e.up.railway.app"></div>
     <div class="config-row"><label>Email</label><input id="email" type="email" placeholder="deine@email.com"></div>
     <div class="config-row"><label>Passwort</label><input id="password" type="password" placeholder="••••••••"></div>
     <div class="config-row"><label>Tourguide</label><select id="leader-select"><option value="">– nach Start wählen –</option></select></div>
@@ -492,7 +492,7 @@ function showTab(name){
 
 function getConfig(){
   return{
-    url:document.getElementById('server-url').value.trim().replace(/\/$/,''),
+    url:(document.getElementById('server-url').value.trim() || DEFAULT_TRACCAR_SERVER).replace(/\/$/,''),
     email:document.getElementById('email').value.trim(),
     password:document.getElementById('password').value,
     threshold:parseInt(document.getElementById('threshold').value)||200,
@@ -1255,13 +1255,20 @@ window.onload=()=>{
   if(saved && savedPassword){
     const config=JSON.parse(saved);
 
-    if(config.url)document.getElementById('server-url').value=config.url;
+    document.getElementById('server-url').value=config.url || DEFAULT_TRACCAR_SERVER;
     if(config.email)document.getElementById('email').value=config.email;
     if(config.threshold)document.getElementById('threshold').value=config.threshold;
 
     document.getElementById('password').value=savedPassword;
   }else{
+    document.getElementById('server-url').value=DEFAULT_TRACCAR_SERVER;
     showLoginPage();
+  }
+
+
+  const serverInput=document.getElementById('server-url');
+  if(serverInput && !serverInput.value.trim()){
+    serverInput.value=DEFAULT_TRACCAR_SERVER;
   }
 
   const pushStatus=document.getElementById('push-status');

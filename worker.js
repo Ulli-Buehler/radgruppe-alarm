@@ -282,3 +282,4 @@ console.log(`Signal-Timeout: ${SIGNAL_TIMEOUT_SECONDS} s`);
 startHealthServer();
 checkAlerts();
 setInterval(checkAlerts, CHECK_INTERVAL_MS);
+

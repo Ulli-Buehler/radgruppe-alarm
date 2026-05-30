@@ -4,6 +4,8 @@ import http from 'http';
 
 const CHECK_INTERVAL_MS = Number(process.env.CHECK_INTERVAL_MS || 10000);
 const SIGNAL_TIMEOUT_SECONDS = Number(process.env.SIGNAL_TIMEOUT_SECONDS || 180);
+const PAUSE_TIMEOUT_SECONDS = Number(process.env.PAUSE_TIMEOUT_SECONDS || 7200);
+const GUIDE_MOVING_SPEED_KMH = Number(process.env.GUIDE_MOVING_SPEED_KMH || 4);
 const PORT = Number(process.env.PORT || 3000);
 
 let isChecking = false;
@@ -23,6 +25,21 @@ function ageSeconds(value) {
   if (!Number.isFinite(time)) return 999999;
 
   return Math.round((Date.now() - time) / 1000);
+}
+
+
+function speedKmh(position) {
+  if (!position || position.speed == null) return 0;
+
+  const value = Number(position.speed);
+
+  if (!Number.isFinite(value)) return 0;
+
+  return value * 1.852;
+}
+
+function isMoving(position) {
+  return speedKmh(position) > GUIDE_MOVING_SPEED_KMH;
 }
 
 function haversine(lat1, lon1, lat2, lon2) {
@@ -150,17 +167,20 @@ async function checkAlerts() {
     const leaderPos = posMap[leaderId];
 
     const messages = [];
+    let guideIsPaused = false;
+    let guideAge = 999999;
 
     if (!leaderId || !leader) {
       messages.push('Kein Tourguide gewählt');
     } else if (!leaderPos) {
       messages.push('Tourguide hat kein Signal');
     } else {
-      const leaderAge = ageSeconds(
-        leaderPos.serverTime || leaderPos.deviceTime || leaderPos.fixTime
-      );
+      guideAge = ageSeconds(leaderPos.serverTime || leaderPos.deviceTime || leaderPos.fixTime);
+      guideIsPaused = !isMoving(leaderPos);
 
-      if (leaderAge > SIGNAL_TIMEOUT_SECONDS) {
+      if (guideAge > PAUSE_TIMEOUT_SECONDS) {
+        messages.push('Tourguide nicht live');
+      } else if (guideAge > SIGNAL_TIMEOUT_SECONDS && !guideIsPaused) {
         messages.push('Tourguide nicht live');
       }
     }
@@ -188,11 +208,31 @@ async function checkAlerts() {
           )
         );
 
-        if (age > SIGNAL_TIMEOUT_SECONDS) {
-          messages.push(`${device.name}: nicht live`);
-        } else if (distance > Number(config.threshold || 200)) {
-          messages.push(`${device.name}: ${distance} m entfernt`);
+        const riderIsPaused = !isMoving(pos);
+        const lastKnownNear = distance <= Number(config.threshold || 200);
+
+        if (age <= SIGNAL_TIMEOUT_SECONDS) {
+          if (distance > Number(config.threshold || 200)) {
+            messages.push(`${device.name}: ${distance} m entfernt`);
+          }
+
+          continue;
         }
+
+        if (
+          age <= PAUSE_TIMEOUT_SECONDS &&
+          lastKnownNear &&
+          (guideIsPaused || riderIsPaused)
+        ) {
+          continue;
+        }
+
+        if (age > PAUSE_TIMEOUT_SECONDS) {
+          messages.push(`${device.name}: nicht live`);
+          continue;
+        }
+
+        messages.push(`${device.name}: nicht live`);
       }
     }
 
@@ -211,7 +251,9 @@ async function checkAlerts() {
         ok: true,
         pushed: true,
         messages,
-        activeDeviceIds: config.activeDeviceIds || []
+        activeDeviceIds: config.activeDeviceIds || [],
+        guideIsPaused,
+        guideAge
       };
 
       console.log('[PUSH]', messages.join(' | '));
@@ -230,7 +272,9 @@ async function checkAlerts() {
       ok: true,
       pushed: false,
       messages,
-      activeDeviceIds: config.activeDeviceIds || []
+      activeDeviceIds: config.activeDeviceIds || [],
+      guideIsPaused,
+      guideAge
     };
   } catch (error) {
     lastResult = {
@@ -256,6 +300,8 @@ function startHealthServer() {
         worker: 'radgruppe-alarm',
         checkIntervalMs: CHECK_INTERVAL_MS,
         signalTimeoutSeconds: SIGNAL_TIMEOUT_SECONDS,
+        pauseTimeoutSeconds: PAUSE_TIMEOUT_SECONDS,
+        guideMovingSpeedKmh: GUIDE_MOVING_SPEED_KMH,
         lastRunAt,
         lastResult
       }));
@@ -278,8 +324,9 @@ function startHealthServer() {
 console.log('Radgruppe Alarm Worker gestartet');
 console.log(`Prüfintervall: ${CHECK_INTERVAL_MS} ms`);
 console.log(`Signal-Timeout: ${SIGNAL_TIMEOUT_SECONDS} s`);
+console.log(`Pause-Timeout: ${PAUSE_TIMEOUT_SECONDS} s`);
+console.log(`Tourguide bewegt ab: ${GUIDE_MOVING_SPEED_KMH} km/h`);
 
 startHealthServer();
 checkAlerts();
 setInterval(checkAlerts, CHECK_INTERVAL_MS);
-

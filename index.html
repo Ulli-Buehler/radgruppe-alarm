@@ -443,6 +443,7 @@ const PAUSE_TIMEOUT_SECONDS=7200;
 const GUIDE_MOVING_SPEED_KMH=4;
 const ACTIVE_DEVICES_KEY='rg-active-devices';
 const ACTIVE_DEVICES_INIT_KEY='rg-active-devices-initialized';
+const DEFAULT_TRACCAR_SERVER='https://traccar-production-c93e.up.railway.app';
 const PUBLIC_VAPID_KEY='BNVgo1Sw3AavabOJg1mPh6zBaHEZa3_AThKmH0WSgFHiXa_mkMTvnnwJIm9G1LPBBtvgy41X8ZSryDAa9s75lpc';
 
 function esc(v){
@@ -965,7 +966,7 @@ async function renderInvites(){
   devices.filter(device=>String(device.id)!==cfg.leader).forEach(device=>{
     const server=cfg.url;
     const kennung=device.uniqueId;
-    const joinUrl=window.location.origin+window.location.pathname+'?join=1&name='+encodeURIComponent(device.name)+'&kennung='+encodeURIComponent(kennung)+'&server='+encodeURIComponent(server);
+    const joinUrl=window.location.origin+window.location.pathname+'?j=1&n='+encodeURIComponent(device.name)+'&k='+encodeURIComponent(kennung);
 
     const card=document.createElement('div');
     card.className='invite-card';
@@ -1209,10 +1210,10 @@ if('serviceWorker' in navigator){
 window.onload=()=>{
   const params=new URLSearchParams(window.location.search);
 
-  if(params.get('join')){
-    const server=params.get('server')||'';
-    const kennung=params.get('kennung')||'';
-    const name=params.get('name')||'';
+  if(params.get('join') || params.get('j')){
+    const server=params.get('server') || params.get('s') || DEFAULT_TRACCAR_SERVER;
+    const kennung=params.get('kennung') || params.get('k') || '';
+    const name=params.get('name') || params.get('n') || '';
 
     document.body.innerHTML=
       '<div style="background:#111418;min-height:100vh;color:#f5f7fa;font-family:sans-serif;padding:24px;display:flex;flex-direction:column;gap:16px;max-width:520px;margin:0 auto">'+

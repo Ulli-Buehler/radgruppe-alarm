@@ -1003,7 +1003,7 @@ function copyText(text,button){
 }
 
 function shareInvite(name,url){
-  const text='Hallo '+name+'! 🚴\n\nInstalliere "Traccar Client" und öffne diesen Link für die Anleitung:\n'+url;
+  const text='Hallo '+name+'! 🚴\n\nBitte zuerst "Traccar Client" installieren. Danach diesen Link öffnen und die Daten kopieren:\n'+url;
 
   if(navigator.share){
     navigator.share({title:'Radgruppe Einladung',text:text,url:url});
@@ -1224,29 +1224,30 @@ window.onload=()=>{
     document.body.innerHTML=
       '<div style="background:#111418;min-height:100vh;color:#f5f7fa;font-family:sans-serif;padding:24px;display:flex;flex-direction:column;gap:16px;max-width:520px;margin:0 auto">'+
         '<div style="font-size:32px;font-weight:900;color:#5dff7a;letter-spacing:2px">🚴 RADGRUPPE</div>'+
-        '<div style="color:#a8b2bf;font-size:13px">Einladung für</div>'+
+        '<div style="color:#a8b2bf;font-size:13px">Einrichtung für</div>'+
         '<div style="font-size:28px;font-weight:900">'+esc(name)+'</div>'+
         '<div style="background:#1b2028;border:1px solid #3b4452;border-radius:8px;padding:16px">'+
-          '<div style="font-size:20px;font-weight:900;color:#5dff7a;margin-bottom:12px">Schnell-Einrichtung</div>'+
-          '<button onclick="openTraccarApp()" style="width:100%;background:#5dff7a;color:#071007;border:none;padding:14px;border-radius:6px;font-weight:900;margin-bottom:10px">📲 1. TRACCAR INSTALLIEREN / ÖFFNEN</button>'+
-          '<button onclick="copyText(\''+esc(server)+'\',this)" style="width:100%;background:#263241;color:#f5f7fa;border:1px solid #5dff7a;padding:13px;border-radius:6px;font-weight:900;margin-bottom:10px">2. URL KOPIEREN</button>'+
-          '<button onclick="copyText(\''+esc(kennung)+'\',this)" style="width:100%;background:#263241;color:#f5f7fa;border:1px solid #5dff7a;padding:13px;border-radius:6px;font-weight:900;margin-bottom:16px">3. KENNUNG KOPIEREN</button>'+
-          '<div style="color:#a8b2bf;font-size:14px;line-height:1.55;margin-bottom:14px">'+
-            '<strong style="color:#f5f7fa">Einstellungen im Traccar Client:</strong><br><br>'+
-            '1. Traccar installieren/öffnen. Danach zu dieser Seite zurückwechseln.<br>'+
-            '2. Server-URL einfügen.<br>'+
-            '3. Kennung / Device ID einfügen.<br>'+
-            '4. Standort auf <strong style="color:#f5f7fa">Immer</strong> erlauben.<br>'+
-            '5. Genauigkeit auf <strong style="color:#f5f7fa">Höchste/Hoch</strong> stellen.<br>'+
-            '6. Intervall auf <strong style="color:#f5f7fa">10 Sekunden</strong> stellen.<br>'+
-            '7. Distanz auf <strong style="color:#f5f7fa">0 Meter</strong> stellen.<br>'+
-            '8. Offline-Puffer einschalten, falls vorhanden.<br>'+
-            '9. Tracking einschalten.'+
-          '</div>'+
+          '<div style="font-size:20px;font-weight:900;color:#5dff7a;margin-bottom:12px">Traccar-Daten</div>'+
+          '<div style="color:#a8b2bf;font-size:14px;line-height:1.5;margin-bottom:14px">Diese Seite offen lassen. Immer einen Wert kopieren, zu Traccar wechseln, einfügen und wieder hierher zurückwechseln.</div>'+
+          '<button onclick="copyText(\''+esc(server)+'\',this)" style="width:100%;background:#5dff7a;color:#071007;border:none;padding:14px;border-radius:6px;font-weight:900;margin-bottom:10px">SERVER-URL KOPIEREN</button>'+
+          '<button onclick="copyText(\''+esc(kennung)+'\',this)" style="width:100%;background:#5dff7a;color:#071007;border:none;padding:14px;border-radius:6px;font-weight:900;margin-bottom:16px">KENNUNG KOPIEREN</button>'+
           '<div style="font-size:12px;color:#a8b2bf;text-transform:uppercase;margin-bottom:8px">Server-URL</div>'+
           '<div style="background:#0f1319;padding:10px;border-radius:4px;font-size:13px;word-break:break-all;margin-bottom:12px">'+esc(server)+'</div>'+
           '<div style="font-size:12px;color:#a8b2bf;margin-top:12px">Kennung / Device ID</div>'+
-          '<div style="background:#0f1319;padding:10px;border-radius:4px;font-size:22px;font-weight:900;letter-spacing:3px;margin-bottom:12px">'+esc(kennung)+'</div>'+
+          '<div style="background:#0f1319;padding:10px;border-radius:4px;font-size:22px;font-weight:900;letter-spacing:3px;margin-bottom:16px">'+esc(kennung)+'</div>'+
+          '<div style="color:#a8b2bf;font-size:14px;line-height:1.55">'+
+            '<strong style="color:#f5f7fa">Einstellungen im Traccar Client:</strong><br><br>'+
+            '1. Traccar Client separat öffnen.<br>'+
+            '2. Einstellungen öffnen.<br>'+
+            '3. Server-URL einfügen.<br>'+
+            '4. Kennung / Device ID einfügen.<br>'+
+            '5. Standort auf <strong style="color:#f5f7fa">Immer</strong> erlauben.<br>'+
+            '6. Genauigkeit auf <strong style="color:#f5f7fa">Höchste/Hoch</strong> stellen.<br>'+
+            '7. Intervall auf <strong style="color:#f5f7fa">10 Sekunden</strong> stellen.<br>'+
+            '8. Distanz auf <strong style="color:#f5f7fa">0 Meter</strong> stellen.<br>'+
+            '9. Tracking einschalten.<br><br>'+
+            'Falls Traccar noch nicht installiert ist: erst aus dem App Store / Play Store installieren, danach diesen Einrichtungslink erneut öffnen.'+
+          '</div>'+
         '</div>'+
       '</div>';
     return;
